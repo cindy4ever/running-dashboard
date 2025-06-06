@@ -1,24 +1,18 @@
 # get_strava_data.py
 
 import duckdb
-import pandas as pd
-from stravalib import Client
 import os
+import pandas as pd
 from dotenv import load_dotenv
-import argparse
+from stravalib.client import Client
+import polyline
+import requests
 import pytz
+import argparse
+
 
 # Load .env
 load_dotenv()
-
-# Strava credentials
-CLIENT_ID = os.getenv("STRAVA_CLIENT_ID")
-CLIENT_SECRET = os.getenv("STRAVA_CLIENT_SECRET")
-ACCESS_TOKEN = os.getenv("STRAVA_ACCESS_TOKEN")
-
-# Connect to Strava
-client = Client()
-client.access_token = ACCESS_TOKEN
 
 # Connect to DuckDB
 con = duckdb.connect("running.duckdb")
@@ -27,7 +21,7 @@ con = duckdb.connect("running.duckdb")
 con.execute("""
     CREATE TABLE IF NOT EXISTS runs (
         activity_id BIGINT PRIMARY KEY,
-        start_date_local DATE,
+        start_date_local TIMESTAMP,
         name TEXT,
         distance_km DOUBLE,
         moving_time_min DOUBLE,
@@ -38,63 +32,69 @@ con.execute("""
     )
 """)
 
-def sync_activities(limit=None):
-    print(f"Running sync... limit = {limit}")
+# Auto-refresh Strava token
+def refresh_strava_token():
+    response = requests.post(
+        url="https://www.strava.com/oauth/token",
+        data={
+            "client_id": os.getenv("STRAVA_CLIENT_ID"),
+            "client_secret": os.getenv("STRAVA_CLIENT_SECRET"),
+            "grant_type": "refresh_token",
+            "refresh_token": os.getenv("STRAVA_REFRESH_TOKEN"),
+        }
+    )
+    response.raise_for_status()
+    tokens = response.json()
 
-    # First pull activities as a list
-    activities = list(client.get_activities(limit=limit))
-    print(f"Total activities pulled: {len(activities)}")
+    print("✅ Refreshed Strava token:", tokens["access_token"])
+    print("Token expires at:", tokens["expires_at"])
+
+    return tokens["access_token"], tokens["refresh_token"], tokens["expires_at"]
+
+# Sync activities into DuckDB
+def sync_activities(limit=None):
+    # Auto-refresh token
+    access_token, refresh_token, token_expires_at = refresh_strava_token()
+
+    client = Client(access_token=access_token)
+    client.refresh_token = refresh_token
+    client.token_expires_at = token_expires_at  # ✅ Silences the warning!
 
     count_new = 0
     count_updated = 0
 
+    # Pacific timezone
+    pacific = pytz.timezone("America/Los_Angeles")
+
+    #First pull activities as a list
+    activities = list(client.get_activities(limit=limit))
+    print(f"Total activities pulled: {len(activities)}")
+
     for activity in activities:
-        # Debug prints for ALL activities
-        # print(f"Run: {activity.name}")
-        # print(f"Type: {activity.type}")
-        # print(f"Raw moving_time: {activity.moving_time} (type: {type(activity.moving_time)})")
-        # print(f"Raw elapsed_time: {activity.elapsed_time} (type: {type(activity.elapsed_time)})")
-        # print("-" * 50)
-
-        # Only process "Run" activities
         if activity.type != "Run":
-            continue
+            continue  # only keep Runs
 
-        # Safe moving_time with fallback
-        try:
-            moving_time_seconds = float(activity.moving_time)
-            if moving_time_seconds < 1:
-                raise ValueError("moving_time too small, fallback to elapsed_time")
-        except Exception as e:
-            print(f"Warning: Moving_time broken for {activity.name}, fallback to elapsed_time. Reason: {e}")
-            moving_time_seconds = float(activity.elapsed_time)
-
-        moving_time_min = moving_time_seconds / 60
-
-        # Distance
-        distance_km = float(activity.distance) / 1000
-
-        # Pace
-        pace_min_per_km = (
-            moving_time_min / distance_km if distance_km > 0 else None
-        )
-
-        # Timezone conversion
+        # Timezone conversion — safe
         pacific = pytz.timezone('America/Los_Angeles')
         start_date_pacific = activity.start_date.astimezone(pacific)
 
-        # Data dict
+        # Safe conversions
+        distance_km = round(float(activity.distance) / 1000, 2)
+        moving_time_min = round(float(activity.moving_time) / 60, 2)
+        pace_min_per_km = round(moving_time_min / distance_km, 2) if distance_km > 0 else None
+        total_elevation_gain_m = round(activity.total_elevation_gain, 2) if activity.total_elevation_gain is not None else 0.0  
+
         data = {
             "activity_id": activity.id,
-            "start_date_local": start_date_pacific.date(),
             "name": activity.name,
+            "start_date_local": start_date_pacific,
             "distance_km": distance_km,
             "moving_time_min": moving_time_min,
             "pace_min_per_km": pace_min_per_km,
-            "total_elevation_gain_m": activity.total_elevation_gain,
-            "summary_polyline": activity.map.summary_polyline if activity.map and activity.map.summary_polyline else None,
-        }
-
+            "total_elevation_gain_m": total_elevation_gain_m,
+            "summary_polyline": activity.map.summary_polyline if activity.map and activity.map.summary_polyline else None,        
+            }
+        
         # Check if exists
         existing = con.execute("SELECT COUNT(*) FROM runs WHERE activity_id = ?", (data["activity_id"],)).fetchone()[0]
 

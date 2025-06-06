@@ -1,0 +1,6 @@
+streamlit
+duckdb
+pandas
+stravalib
+python-dotenv
+

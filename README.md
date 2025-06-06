@@ -1,61 +1,70 @@
-# 🏃‍♂️ Running Dashboard (Strava → DuckDB → Streamlit)
+# 🏃‍♀️ Running Dashboard — Road to Sydney Marathon 2025
 
-A simple personal running dashboard:
-
-✅ Pulls runs from **Strava API**  
-✅ Stores data in **DuckDB**  
-✅ Dashboard built with **Streamlit**  
-✅ "Sync latest 100 runs" button  
-✅ Full history sync supported  
+This is a personal running dashboard powered by Strava API, DuckDB, and Streamlit.  
+It tracks my runs and visualizes progress — towards Sydney Marathon 2025! 🏃‍♀️✨
 
 ---
 
-## 🚀 Project Structure
+## 📦 Features
 
-```
-/running-dashboard
-├── app.py
-├── get_strava_data.py
-├── .env
-├── requirements.txt
-├── running.duckdb  # auto-created after first sync
-└── README.md
-```
+✅ Pull run history from Strava API  
+✅ Store in local DuckDB database  
+✅ Sync new runs with one click  
+✅ View heatmap of runs  
+✅ View trends: pace, distance per week  
+✅ Clean, simple dashboard (Streamlit)  
 
 ---
 
-## ⚙️ Setup
+## ⚙️ Tech Stack
 
-### 1️⃣ Create `.env`
-
-```env
-STRAVA_CLIENT_ID=your_client_id
-STRAVA_CLIENT_SECRET=your_client_secret
-STRAVA_ACCESS_TOKEN=your_access_token
-```
+- Python 3.13  
+- Strava API  
+- DuckDB  
+- Streamlit  
+- Folium (for heatmap)  
+- pandas, polyline  
 
 ---
 
-### 2️⃣ Create and activate virtual environment
+## 🚀 Setup Instructions
+
+### 1️⃣ Clone repo
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+git clone https://github.com/your_username/running-dashboard.git
+cd running-dashboard
 ```
 
 ---
 
-### 3️⃣ Install dependencies
+### 2️⃣ Create virtual env & install dependencies
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
 ---
 
-## 🏃‍♂️ Run Full History Sync
+### 3️⃣ Set up `.env`
 
-Pull entire Strava run history into DuckDB:
+```bash
+cp .env.example .env
+```
+
+Fill in your Strava API credentials:
+
+```env
+STRAVA_CLIENT_ID=your_client_id
+STRAVA_CLIENT_SECRET=your_client_secret
+STRAVA_REFRESH_TOKEN=your_refresh_token
+```
+
+---
+
+### 4️⃣ First full sync
 
 ```bash
 python get_strava_data.py --full
@@ -63,7 +72,7 @@ python get_strava_data.py --full
 
 ---
 
-## 🖥️ Run Streamlit Dashboard
+### 5️⃣ Run the dashboard
 
 ```bash
 streamlit run app.py
@@ -71,50 +80,46 @@ streamlit run app.py
 
 ---
 
-## 🔄 Sync Latest 100 Runs (via Button)
+## 🗂️ Project Structure
 
-In Streamlit app:  
-Click:  
-
+```text
+├── app.py                  # Streamlit dashboard
+├── get_strava_data.py      # Strava sync script
+├── running.duckdb          # Local database (ignored in Git)
+├── .env.example            # Example config
+├── requirements.txt
+├── README.md
+├── .gitignore
+└── map.html                # Generated at runtime (ignored in Git)
 ```
-🔄 Sync latest 100 runs from Strava
-```
-
-This will pull **latest 100 runs** and update DuckDB.
 
 ---
 
-## 💾 DuckDB Table Schema
+## 🚫 Git ignore
 
-| Column                 | Type   |
-|------------------------|--------|
-| activity_id            | BIGINT (PRIMARY KEY) |
-| start_date_local       | DATE   |
-| name                   | TEXT   |
-| distance_km            | DOUBLE |
-| moving_time_min        | DOUBLE |
-| pace_min_per_km        | DOUBLE |
-| total_elevation_gain_m | DOUBLE |
-| summary_polyline       | TEXT   |
-| updated_at             | TIMESTAMP |
+✅ `map.html` is ignored  
+✅ `running.duckdb` is ignored  
+✅ `.env` is ignored  
 
 ---
 
-## 🌟 Next Iterations (Optional)
+## 🎉 Roadmap / Future Ideas
 
-✅ Map rendering (Folium heatmap, PyDeck)  
-✅ Trend charts (pace, distance)  
-✅ Token refresh flow  
-✅ Deploy to **Streamlit Cloud**  
-✅ More advanced filters  
-
----
-
-## Notes
-
-- **Sync button** is safe to run multiple times — uses `activity_id` as primary key → no duplicates.
-- If you sync more runs into Strava (e.g. from Apple Watch), running sync will pull them in automatically.
+- Auto-schedule background sync (CRON)  
+- Deploy on Streamlit Cloud  
+- Add run details page  
+- Compare with training plan  
+- Show VO2 max trend 🚴‍♀️✅  
 
 ---
 
-🚴‍♂️ Enjoy your personal running dashboard! 🚀✨
+## 📜 License
+
+MIT License — for personal use 🚴‍♀️
+
+---
+
+
+Road to Sydney Marathon 2025 — 🏃‍♀️✨
+
+---

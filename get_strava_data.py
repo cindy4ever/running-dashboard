@@ -72,7 +72,8 @@ def sync_activities(limit=None):
             continue  # only keep Runs
 
 
-        start_date_pacific = activity.start_date_local
+        start_date_pacific = activity.start_date_local.replace(tzinfo=None)
+
 
         # Safe conversions
         distance_km = round(float(activity.distance) / 1000, 2)

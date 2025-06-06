@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from stravalib.client import Client
 import polyline
 import requests
-import pytz
 import argparse
 
 
@@ -63,8 +62,6 @@ def sync_activities(limit=None):
     count_new = 0
     count_updated = 0
 
-    # Pacific timezone
-    pacific = pytz.timezone("America/Los_Angeles")
 
     #First pull activities as a list
     activities = list(client.get_activities(limit=limit))
@@ -74,9 +71,8 @@ def sync_activities(limit=None):
         if activity.type != "Run":
             continue  # only keep Runs
 
-        # Timezone conversion — safe
-        pacific = pytz.timezone('America/Los_Angeles')
-        start_date_pacific = activity.start_date.astimezone(pacific)
+
+        start_date_pacific = activity.start_date_local
 
         # Safe conversions
         distance_km = round(float(activity.distance) / 1000, 2)

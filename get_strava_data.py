@@ -1,5 +1,3 @@
-# get_strava_data.py
-
 import duckdb
 import os
 import pandas as pd
@@ -7,8 +5,8 @@ from dotenv import load_dotenv
 from stravalib.client import Client
 import polyline
 import requests
+import pytz
 import argparse
-
 
 # Load .env
 load_dotenv()
@@ -21,12 +19,14 @@ con.execute("""
     CREATE TABLE IF NOT EXISTS runs (
         activity_id BIGINT PRIMARY KEY,
         start_date_local TIMESTAMP,
-        name TEXT,
+        run_name TEXT,
         distance_km DOUBLE,
         moving_time_min DOUBLE,
         pace_min_per_km DOUBLE,
         total_elevation_gain_m DOUBLE,
         summary_polyline TEXT,
+        average_heartrate DOUBLE,
+        max_heartrate DOUBLE,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """)
@@ -62,8 +62,7 @@ def sync_activities(limit=None):
     count_new = 0
     count_updated = 0
 
-
-    #First pull activities as a list
+    # First pull activities as a list
     activities = list(client.get_activities(limit=limit))
     print(f"Total activities pulled: {len(activities)}")
 
@@ -71,27 +70,29 @@ def sync_activities(limit=None):
         if activity.type != "Run":
             continue  # only keep Runs
 
-
-        start_date_pacific = activity.start_date_local.replace(tzinfo=None)
-
+        # start_date_local is already in Pacific → strip tz
+        start_date_local = activity.start_date_local.replace(tzinfo=None)
 
         # Safe conversions
         distance_km = round(float(activity.distance) / 1000, 2)
         moving_time_min = round(float(activity.moving_time) / 60, 2)
         pace_min_per_km = round(moving_time_min / distance_km, 2) if distance_km > 0 else None
-        total_elevation_gain_m = round(activity.total_elevation_gain, 2) if activity.total_elevation_gain is not None else 0.0  
+        total_elevation_gain_m = round(activity.total_elevation_gain, 2) if activity.total_elevation_gain is not None else 0.0
 
+        # Prepare data
         data = {
             "activity_id": activity.id,
-            "name": activity.name,
-            "start_date_local": start_date_pacific,
+            "run_name": activity.name,
+            "start_date_local": start_date_local,
             "distance_km": distance_km,
             "moving_time_min": moving_time_min,
             "pace_min_per_km": pace_min_per_km,
             "total_elevation_gain_m": total_elevation_gain_m,
-            "summary_polyline": activity.map.summary_polyline if activity.map and activity.map.summary_polyline else None,        
-            }
-        
+            "summary_polyline": activity.map.summary_polyline if activity.map and activity.map.summary_polyline else None,
+            "average_heartrate": activity.average_heartrate,
+            "max_heartrate": activity.max_heartrate
+        }
+
         # Check if exists
         existing = con.execute("SELECT COUNT(*) FROM runs WHERE activity_id = ?", (data["activity_id"],)).fetchone()[0]
 
@@ -100,22 +101,26 @@ def sync_activities(limit=None):
             con.execute("""
                 UPDATE runs SET
                     start_date_local = ?,
-                    name = ?,
+                    run_name = ?,
                     distance_km = ?,
                     moving_time_min = ?,
                     pace_min_per_km = ?,
                     total_elevation_gain_m = ?,
                     summary_polyline = ?,
+                    average_heartrate = ?,
+                    max_heartrate = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE activity_id = ?
             """, (
                 data["start_date_local"],
-                data["name"],
+                data["run_name"],
                 data["distance_km"],
                 data["moving_time_min"],
                 data["pace_min_per_km"],
                 data["total_elevation_gain_m"],
                 data["summary_polyline"],
+                data["average_heartrate"],
+                data["max_heartrate"],
                 data["activity_id"]
             ))
             count_updated += 1
@@ -123,22 +128,25 @@ def sync_activities(limit=None):
             # Insert
             con.execute("""
                 INSERT INTO runs (
-                    activity_id, start_date_local, name, distance_km,
-                    moving_time_min, pace_min_per_km, total_elevation_gain_m, summary_polyline
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    activity_id, start_date_local, run_name, distance_km,
+                    moving_time_min, pace_min_per_km, total_elevation_gain_m,
+                    summary_polyline, average_heartrate, max_heartrate
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 data["activity_id"],
                 data["start_date_local"],
-                data["name"],
+                data["run_name"],
                 data["distance_km"],
                 data["moving_time_min"],
                 data["pace_min_per_km"],
                 data["total_elevation_gain_m"],
-                data["summary_polyline"]
+                data["summary_polyline"],
+                data["average_heartrate"],
+                data["max_heartrate"]
             ))
             count_new += 1
 
-    print(f"Sync complete! New: {count_new}, Updated: {count_updated}")
+    print(f"✅ Sync complete! New: {count_new}, Updated: {count_updated}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

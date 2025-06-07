@@ -171,25 +171,29 @@ st.header("📋 Run Table")
 # Build display dataframe — correct columns, rounded
 df_display = df[[
     "start_date_local",
-    "name",
+    "run_name",
     "distance_km",
     "moving_time_min",
     "pace_min_per_km",
-    "total_elevation_gain_m"
+    "total_elevation_gain_m",
+    "average_heartrate", 
+    "max_heartrate"
 ]].copy()
 
 # Round numbers first
-numeric_cols = ["distance_km", "moving_time_min", "pace_min_per_km", "total_elevation_gain_m"]
+numeric_cols = ["distance_km", "moving_time_min", "pace_min_per_km", "total_elevation_gain_m","average_heartrate", "max_heartrate"]
 df_display[numeric_cols] = df_display[numeric_cols].round(2)
 df_display[numeric_cols] = df_display[numeric_cols].applymap(lambda x: f"{x:.2f}")
 # Rename columns
 df_display = df_display.rename(columns={
     "start_date_local": "Start Date",
-    "name": "Run Name",
+    "run_name": "Run Name",
     "distance_km": "Distance (km)",
     "moving_time_min": "Moving Time (min)",
     "pace_min_per_km": "Pace (min/km)",
-    "total_elevation_gain_m": "Elevation Gain (m)"
+    "total_elevation_gain_m": "Elevation Gain (m)",
+    "average_heartrate": "Avg HR",
+    "max_heartrate": "Max HR"
 })
 
 # Display → clean table, no index

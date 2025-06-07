@@ -27,6 +27,8 @@ con.execute("""
         summary_polyline TEXT,
         average_heartrate DOUBLE,
         max_heartrate DOUBLE,
+        latitude DOUBLE, 
+        longitude DOUBLE, 
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
 """)
@@ -79,6 +81,19 @@ def sync_activities(limit=None):
         pace_min_per_km = round(moving_time_min / distance_km, 2) if distance_km > 0 else None
         total_elevation_gain_m = round(activity.total_elevation_gain, 2) if activity.total_elevation_gain is not None else 0.0
 
+        # Decode polyline to get latitude and longitude
+        if activity.map and activity.map.summary_polyline:
+            try:
+                first_point = polyline.decode(activity.map.summary_polyline)[0]
+                latitude = first_point[0]
+                longitude = first_point[1]
+            except:
+                latitude = None
+                longitude = None
+        else:
+            latitude = None
+            longitude = None
+        
         # Prepare data
         data = {
             "activity_id": activity.id,
@@ -90,7 +105,9 @@ def sync_activities(limit=None):
             "total_elevation_gain_m": total_elevation_gain_m,
             "summary_polyline": activity.map.summary_polyline if activity.map and activity.map.summary_polyline else None,
             "average_heartrate": activity.average_heartrate,
-            "max_heartrate": activity.max_heartrate
+            "max_heartrate": activity.max_heartrate,
+            "latitude": latitude,
+            "longitude": longitude
         }
 
         # Check if exists
@@ -109,6 +126,8 @@ def sync_activities(limit=None):
                     summary_polyline = ?,
                     average_heartrate = ?,
                     max_heartrate = ?,
+                    latitude = ?,
+                    longitude = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE activity_id = ?
             """, (
@@ -121,6 +140,8 @@ def sync_activities(limit=None):
                 data["summary_polyline"],
                 data["average_heartrate"],
                 data["max_heartrate"],
+                data["latitude"],
+                data["longitude"],
                 data["activity_id"]
             ))
             count_updated += 1
@@ -130,8 +151,8 @@ def sync_activities(limit=None):
                 INSERT INTO runs (
                     activity_id, start_date_local, run_name, distance_km,
                     moving_time_min, pace_min_per_km, total_elevation_gain_m,
-                    summary_polyline, average_heartrate, max_heartrate
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    summary_polyline, average_heartrate, max_heartrate, latitude, longitude
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 data["activity_id"],
                 data["start_date_local"],
@@ -142,7 +163,9 @@ def sync_activities(limit=None):
                 data["total_elevation_gain_m"],
                 data["summary_polyline"],
                 data["average_heartrate"],
-                data["max_heartrate"]
+                data["max_heartrate"],
+                data["latitude"],
+                data["longitude"]
             ))
             count_new += 1
 

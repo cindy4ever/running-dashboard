@@ -1,60 +1,56 @@
-# 🏃‍♀️ Running Dashboard — Road to Sydney Marathon 2025
+# 🏃 Road to Sydney Marathon Dashboard
 
-This is a personal running dashboard powered by Strava API, DuckDB, and Streamlit.  
-It tracks my runs and visualizes progress — towards Sydney Marathon 2025! 🏃‍♀️✨
+A personal running dashboard powered by Streamlit, DuckDB, and Strava data.  
+Track your training toward the Sydney Marathon on **August 31, 2025** with heatmaps, trends, and detailed run insights.
 
 ---
 
 ## 📦 Features
 
-✅ Pull run history from Strava API  
-✅ Store in local DuckDB database  
-✅ Sync new runs with one click  
-✅ View heatmap of runs  
-✅ View trends: pace, distance per week  
-✅ Clean, simple dashboard (Streamlit)  
+- 🔄 Sync the latest runs from Strava
+- 🗺️ Interactive heatmap of all routes (Folium)
+- 📊 Monthly & weekly trends for distance and pace
+- 📈 Cumulative training progress
+- 📋 Clean run table with eye-icon links to per-run detail pages
+- 🧭 Detail pages show distance, pace, elevation, duration, and interactive maps
+- ✅ Works locally and on Streamlit Cloud
 
 ---
 
-## ⚙️ Tech Stack
+## 🧰 Tech Stack
 
-- Python 3.13  
-- Strava API  
-- DuckDB  
-- Streamlit  
-- Folium (for heatmap)  
-- pandas, polyline  
+- [Streamlit](https://streamlit.io/)
+- [DuckDB](https://duckdb.org/)
+- [Folium](https://python-visualization.github.io/folium/)
+- [Altair](https://altair-viz.github.io/)
+- [Strava API](https://developers.strava.com/)
+- [Font Awesome](https://fontawesome.com/)
 
 ---
 
-## 🚀 Setup Instructions
+## 🛠 Setup
 
-### 1️⃣ Clone repo
+1. **Clone the repo**
 
 ```bash
-git clone https://github.com/your_username/running-dashboard.git
+git clone https://github.com/your-username/running-dashboard.git
 cd running-dashboard
 ```
 
----
-
-### 2️⃣ Create virtual env & install dependencies
+2. **Create and activate a virtual environment**
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. **Install dependencies**
+
+```bash
 pip install -r requirements.txt
 ```
 
----
-
-### 3️⃣ Set up `.env`
-
-```bash
-cp .env.example .env
-```
-
-Fill in your Strava API credentials:
+4. **Create a `.env` file with your Strava credentials**
 
 ```env
 STRAVA_CLIENT_ID=your_client_id
@@ -62,64 +58,52 @@ STRAVA_CLIENT_SECRET=your_client_secret
 STRAVA_REFRESH_TOKEN=your_refresh_token
 ```
 
----
-
-### 4️⃣ First full sync
+5. **Sync data from Strava**
 
 ```bash
-python get_strava_data.py --full
+python get_strava_data.py
 ```
 
----
-
-### 5️⃣ Run the dashboard
+6. **Launch the dashboard locally**
 
 ```bash
 streamlit run app.py
 ```
 
+Visit [http://localhost:8501](http://localhost:8501) in your browser.
+
 ---
 
-## 🗂️ Project Structure
+## 🌐 Deployment
 
-```text
-├── app.py                  # Streamlit dashboard
-├── get_strava_data.py      # Strava sync script
-├── running.duckdb          # Local database (ignored in Git)
-├── .env.example            # Example config
+Deployable on [Streamlit Cloud](https://streamlit.io/cloud).  
+Make sure your `running.duckdb` and `.env` values are configured securely.
+
+---
+
+### ▶️ Live App
+
+👉 [View the live dashboard](https://running-dashboard-countdown-to-sydney.streamlit.app/)
+
+---
+
+## 📂 Project Structure
+
+```
+.
+├── app.py               # Main dashboard
+├── details.py           # Per-run detail view
+├── get_strava_data.py   # Script to sync runs from Strava
+├── running.duckdb       # DuckDB file storing all activity data
+├── .env                 # Strava credentials (excluded from version control)
 ├── requirements.txt
-├── README.md
-├── .gitignore
-└── map.html                # Generated at runtime (ignored in Git)
+└── README.md
 ```
 
 ---
 
-## 🚫 Git ignore
 
-✅ `map.html` is ignored  
-✅ `running.duckdb` is ignored  
-✅ `.env` is ignored  
+## ✨ Credits
 
----
-
-## 🎉 Roadmap / Future Ideas
-
-- Auto-schedule background sync (CRON)  
-- Deploy on Streamlit Cloud  
-- Add run details page  
-- Compare with training plan  
-- Show VO2 max trend 🚴‍♀️✅  
-
----
-
-## 📜 License
-
-MIT License — for personal use 🚴‍♀️
-
----
-
-
-Road to Sydney Marathon 2025 — 🏃‍♀️✨
-
----
+Built by Cindy 
+Inspired by a love for running, data, and Sydney 🐨

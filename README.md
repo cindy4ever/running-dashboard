@@ -1,4 +1,4 @@
-# 🏃 Road to Sydney Marathon Dashboard
+# 🏃‍♀️ Road to Sydney Marathon Dashboard
 
 A personal running dashboard powered by Streamlit, DuckDB, and Strava data.  
 Track your training toward the Sydney Marathon on **August 31, 2025** with heatmaps, trends, and detailed run insights.
@@ -106,4 +106,5 @@ Make sure your `running.duckdb` and `.env` values are configured securely.
 ## ✨ Credits
 
 Built by Cindy 
+
 Inspired by a love for running, data, and Sydney 🐨

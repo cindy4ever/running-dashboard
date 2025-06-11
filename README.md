@@ -91,10 +91,11 @@ Make sure your `running.duckdb` and `.env` values are configured securely.
 
 ```
 .
-├── app.py               # Main dashboard
-├── details.py           # Per-run detail view
-├── get_strava_data.py   # Script to sync runs from Strava
-├── running.duckdb       # DuckDB file storing all activity data
+├── app.py
+├── pages/
+│   └── details.py
+├── get_strava_data.py
+├── running.duckdb
 ├── .env                 # Strava credentials (excluded from version control)
 ├── requirements.txt
 └── README.md

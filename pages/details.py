@@ -62,7 +62,10 @@ st.markdown(f"**📅 {run['start_date_local'].strftime('%A, %B %d, %Y at %H:%M')
 col1, col2, col3, col4 = st.columns(4)
 
 col1.metric("📏 Distance (km)", f"{run['distance_km']:.2f}")
-col2.metric("⏱️ Pace (min/km)", f"{run['pace_min_per_km']:.2f}")
+pace_float = run["pace_min_per_km"]
+pace_min = int(pace_float)
+pace_sec = int(round((pace_float - pace_min) * 60))
+col2.metric("⏱️ Pace", f"{pace_min} min {pace_sec} sec/km")
 col3.metric("⛰️ Elevation (m)", f"{run['total_elevation_gain_m']:.0f}")
 
 # Convert and show duration

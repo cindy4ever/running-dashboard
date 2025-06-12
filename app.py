@@ -180,4 +180,13 @@ df_display.drop(columns=["activity_id"], inplace=True)
 
 df_display["Max HR"] = df_display["Max HR"].round(0).astype("Int64")
 
+def format_pace(pace_float):
+    if pd.isna(pace_float):
+        return ""
+    pace_min = int(pace_float)
+    pace_sec = int(round((pace_float - pace_min) * 60))
+    return f"{pace_min} min {pace_sec} sec"
+
+df_display["Pace (min/km)"] = df_display["Pace (min/km)"].apply(format_pace)
+
 st.write(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)

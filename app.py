@@ -14,10 +14,16 @@ import altair as alt
 import polyline
 import datetime
 
+from openai import OpenAI
+
 from streamlit.components.v1 import html
 
 # Load .env
 load_dotenv()
+client = OpenAI(
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
 
 # Page config
 st.set_page_config(page_title="Road to Sydney Marathon 🏃‍♀️", layout="wide")
@@ -84,6 +90,10 @@ marathon_date = datetime.date(2025, 8, 31)
 today = datetime.date.today()
 days_remaining = (marathon_date - today).days
 st.markdown(f"### ⏳ Countdown: **{days_remaining} days** until Sydney Marathon 🏅🎉")
+
+last_run_date = df["start_date_local"].max()
+st.markdown(f"### 🕓 Last Synced Run: `{last_run_date.strftime('%Y-%m-%d %H:%M:%S')}`")
+
 
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
@@ -200,5 +210,46 @@ def format_duration(m_float):
 df_display["Pace (min/km)"] = df_display["Pace (min/km)"].apply(format_pace)
 df_display["Moving Time"] = df_display["Moving Time"].apply(format_duration)
 
+# Generate summary stats to send to Groq
+summary_stats = {
+    "weekly_distance_km": round(df[df["start_date_local"] >= pd.Timestamp.today() - pd.Timedelta(days=7)]["distance_km"].sum(), 2),
+    "longest_run_km": round(df["distance_km"].max(), 2),
+    "average_pace_min_per_km": round(df["pace_min_per_km"].mean(), 2),
+    "average_hr": round(df["average_heartrate"].mean(), 1),
+    "run_count_last_7_days": len(df[df["start_date_local"] >= pd.Timestamp.today() - pd.Timedelta(days=7)]),
+    "goal": "Prepare for Sydney Marathon on August 31, 2025"
+}
+
 # Render
 st.write(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
+
+# Summary stats for Groq
+cutoff = pd.to_datetime(datetime.datetime.now().date() - datetime.timedelta(days=7))
+recent_runs = df[df["start_date_local"] >= cutoff]
+if recent_runs.empty:
+    st.warning("🚨 No runs detected in the past 7 days. Consider syncing your latest Strava activities.")
+
+summary_stats = {
+    "weekly_distance_km": round(recent_runs["distance_km"].sum(), 2),
+    "longest_run_km": round(df["distance_km"].max(), 2),
+    "average_pace_min_per_km": round(df["pace_min_per_km"].mean(), 2),
+    "average_hr": round(df["average_heartrate"].mean(), 1),
+    "run_count_last_7_days": len(recent_runs),
+    "goal": "Prepare for Sydney Marathon on August 31, 2025"
+}
+
+# Query Groq for AI-generated insight
+try:
+    with st.spinner("🧠 Analyzing your training with Groq..."):
+        response = client.chat.completions.create(
+            model="mistral-saba-24b",
+            messages=[
+                {"role": "system", "content": "You are a friendly running coach helping a runner train for a marathon."},
+                {"role": "user", "content": f"Based on these stats: {summary_stats}, give 3 short, specific training insights for this runner. Focus on recent progress and next steps. Keep it under 80 words total."}
+            ]
+        )
+        insight_text = response.choices[0].message.content
+        st.markdown("### 🧠 AI Coach's Insight")
+        st.info(insight_text)
+except Exception as e:
+    st.warning(f"⚠️ Unable to fetch insights from Groq: {e}")

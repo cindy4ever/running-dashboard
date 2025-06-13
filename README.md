@@ -1,7 +1,7 @@
-# 🏃‍♀️ Road to Sydney Marathon Dashboard
+# 🏃 Road to Sydney Marathon Dashboard
 
-A personal running dashboard powered by Streamlit, DuckDB, and Strava data.  
-Track your training toward the Sydney Marathon on **August 31, 2025** with heatmaps, trends, and detailed run insights.
+A personal running dashboard powered by Streamlit, DuckDB, Strava, and Groq.  
+Track your training toward the Sydney Marathon on **August 31, 2025** with heatmaps, trends, detailed run insights, and personalized AI coaching.
 
 ---
 
@@ -11,8 +11,11 @@ Track your training toward the Sydney Marathon on **August 31, 2025** with heatm
 - 🗺️ Interactive heatmap of all routes (Folium)
 - 📊 Monthly & weekly trends for distance and pace
 - 📈 Cumulative training progress
-- 📋 Clean run table with eye-icon links to per-run detail pages
+- 📋 Clean run table with one-click access to run detail pages
 - 🧭 Detail pages show distance, pace, elevation, duration, and interactive maps
+- 🧠 **Groq-powered AI Coach Insights**:
+  - Dashboard: summarizes weekly progress + recommends next steps
+  - Per-run: 3 specific bullet-point takeaways for each workout
 - ✅ Works locally and on Streamlit Cloud
 
 ---
@@ -24,6 +27,7 @@ Track your training toward the Sydney Marathon on **August 31, 2025** with heatm
 - [Folium](https://python-visualization.github.io/folium/)
 - [Altair](https://altair-viz.github.io/)
 - [Strava API](https://developers.strava.com/)
+- [Groq + OpenAI SDK](https://console.groq.com/)
 - [Font Awesome](https://fontawesome.com/)
 
 ---
@@ -50,12 +54,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Create a `.env` file with your Strava credentials**
+4. **Create a `.env` file with your credentials**
 
 ```env
 STRAVA_CLIENT_ID=your_client_id
 STRAVA_CLIENT_SECRET=your_client_secret
 STRAVA_REFRESH_TOKEN=your_refresh_token
+GROQ_API_KEY=your_groq_api_key
 ```
 
 5. **Sync data from Strava**
@@ -70,20 +75,12 @@ python get_strava_data.py
 streamlit run app.py
 ```
 
-Visit [http://localhost:8501](http://localhost:8501) in your browser.
-
 ---
 
 ## 🌐 Deployment
 
 Deployable on [Streamlit Cloud](https://streamlit.io/cloud).  
-Make sure your `running.duckdb` and `.env` values are configured securely.
-
----
-
-### ▶️ Live App
-
-👉 [View the live dashboard](https://running-dashboard-countdown-to-sydney.streamlit.app/)
+Make sure your `.env` values and `running.duckdb` are set up in the cloud environment.
 
 ---
 
@@ -91,21 +88,25 @@ Make sure your `running.duckdb` and `.env` values are configured securely.
 
 ```
 .
-├── app.py
+├── app.py               # Main dashboard (overview, trends, insights)
 ├── pages/
-│   └── details.py
-├── get_strava_data.py
-├── running.duckdb
-├── .env                 # Strava credentials (excluded from version control)
+│   └── details.py       # Per-run detail view with map + AI feedback
+├── get_strava_data.py   # Script to sync runs from Strava
+├── running.duckdb       # DuckDB file storing all activity data
+├── .env                 # Strava + Groq credentials (excluded from version control)
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
+## ▶️ Live App
+
+👉 [https://running-dashboard-countdown-to-sydney.streamlit.app](https://running-dashboard-countdown-to-sydney.streamlit.app)
+
+---
 
 ## ✨ Credits
 
-Built by Cindy 
-
+Built by [Your Name]  
 Inspired by a love for running, data, and Sydney 🐨

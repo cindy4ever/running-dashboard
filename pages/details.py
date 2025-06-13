@@ -6,6 +6,16 @@ import folium
 from streamlit.components.v1 import html
 from datetime import timedelta
 
+from dotenv import load_dotenv
+from openai import OpenAI
+import os
+
+load_dotenv()
+client = OpenAI(
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1"
+)
+
 
 # Set page config
 st.set_page_config(
@@ -94,3 +104,37 @@ if run["summary_polyline"]:
         st.error(f"Error rendering map: {e}")
 else:
     st.warning("No GPS route data available for this run.")
+
+# Build a concise summary of the run
+run_summary = {
+    "name": run["run_name"],
+    "distance_km": round(run["distance_km"], 2),
+    "pace_min_per_km": round(run["pace_min_per_km"], 2),
+    "duration_min": round(run["moving_time_min"], 1),
+    "elevation_gain_m": int(run["total_elevation_gain_m"]),
+    "avg_hr": int(run["average_heartrate"]) if not pd.isna(run["average_heartrate"]) else "N/A",
+    "max_hr": int(run["max_heartrate"]) if not pd.isna(run["max_heartrate"]) else "N/A",
+    "date": run["start_date_local"].strftime("%Y-%m-%d")
+}
+
+# Create concise instruction prompt
+prompt = (
+    f"Here is a summary of a run: {run_summary}. "
+    "Give 3 short training insights or suggestions as bullet points. Keep each under 20 words."
+)
+
+# Fetch insights from Groq
+try:
+    with st.spinner("🧠 Generating AI coach's insights... "):
+        response = client.chat.completions.create(
+            model="mistral-saba-24b",  # You can replace with another supported model
+            messages=[
+                {"role": "system", "content": "You are a helpful and concise running coach."},
+                {"role": "user", "content": prompt}
+            ]
+        )
+        insight_text = response.choices[0].message.content
+        st.markdown("### 🧠 AI Coach's Insight for This Run")
+        st.info(insight_text)
+except Exception as e:
+    st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")

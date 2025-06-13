@@ -118,23 +118,44 @@ run_summary = {
 }
 
 # Create concise instruction prompt
-prompt = (
-    f"Here is a summary of a run: {run_summary}. "
-    "Give 3 short training insights or suggestions as bullet points. Keep each under 20 words."
-)
 
-# Fetch insights from Groq
-try:
-    with st.spinner("🧠 Generating AI coach's insights... "):
-        response = client.chat.completions.create(
-            model="mistral-saba-24b",  # You can replace with another supported model
-            messages=[
-                {"role": "system", "content": "You are a helpful and concise running coach."},
-                {"role": "user", "content": prompt}
-            ]
-        )
-        insight_text = response.choices[0].message.content
-        st.markdown("### 🧠 AI Coach's Insight for This Run")
-        st.info(insight_text)
-except Exception as e:
-    st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")
+con.execute("""
+    CREATE TABLE IF NOT EXISTS insights (
+        activity_id BIGINT PRIMARY KEY,
+        insight TEXT
+    )
+""")
+cached = con.execute("SELECT insight FROM insights WHERE activity_id = ?", (int(run_id),)).fetchone()
+
+if cached:
+    st.markdown("### 🧠 AI Coach's Insight for This Run")
+    st.info(cached[0])
+else:
+    try:
+        with st.spinner("🧠 Generating AI coach's insights..."):
+            prompt = (
+                f"You are a marathon running coach analyzing this workout: {run_summary}. "
+                "Give 3 short, actionable coaching insights in bullet points. "
+                "Avoid repeating stats. Instead, explain what to adjust, improve, or learn. "
+                "Assume the runner is training for Sydney marathon in Aug 31st."
+            )
+
+            response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": "You are a concise, practical, and supportive marathon coach."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+
+            insight_text = response.choices[0].message.content
+            formatted = insight_text.replace("•", "\n\n•").strip()
+
+            # Save insight to DuckDB
+            con.execute("INSERT INTO insights (activity_id, insight) VALUES (?, ?)", (int(run_id), formatted))
+
+            st.markdown("### 🧠 AI Coach's Insight for This Run")
+            st.info(formatted)
+
+    except Exception as e:
+        st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")

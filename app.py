@@ -242,10 +242,10 @@ summary_stats = {
 try:
     with st.spinner("🧠 Analyzing your training with Groq..."):
         response = client.chat.completions.create(
-            model="mistral-saba-24b",
+            model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": "You are a friendly running coach helping a runner train for a marathon."},
-                {"role": "user", "content": f"Based on these stats: {summary_stats}, give 3 short, specific training insights for this runner. Focus on recent progress and next steps. Keep it under 80 words total."}
+                {"role": "user", "content": f"Based on these stats: {summary_stats}, give 3 short, specific training insights for this runner. Focus on recent progress and next steps."}
             ]
         )
         insight_text = response.choices[0].message.content

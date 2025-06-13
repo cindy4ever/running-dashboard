@@ -108,5 +108,5 @@ Make sure your `.env` values and `running.duckdb` are set up in the cloud enviro
 
 ## ✨ Credits
 
-Built by [Your Name]  
+Built by Cindy
 Inspired by a love for running, data, and Sydney 🐨

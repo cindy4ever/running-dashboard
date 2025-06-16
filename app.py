@@ -244,12 +244,27 @@ try:
         response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
-                {"role": "system", "content": "You are a friendly running coach helping a runner train for a marathon."},
-                {"role": "user", "content": f"Based on these stats: {summary_stats}, give 3 short, specific training insights for this runner. Focus on recent progress and next steps."}
+                {"role": "system", "content": "You are a bilingual marathon running coach."},
+                {"role": "user",
+                 "content": (
+                    f"Based on these stats: {summary_stats}, give 3 short, specific training insights for this runner. "
+                    "First, list the 3 bullet points in English. "
+                    "Then, list the same 3 insights translated into Chinese using 简体中文 (Simplified Chinese, not Traditional). "
+                    "Use modern, simple vocabulary. Do not include section headings or labels."
+  )
+}
+
             ]
         )
-        insight_text = response.choices[0].message.content
+
+        insight_text = response.choices[0].message.content.strip()
+
+        # Optional: remove any unexpected headings or labels
+        lines = [line for line in insight_text.split("\n") if not line.lower().startswith(("english", "chinese", "insight"))]
+        formatted_output = "\n\n".join(lines)
+
         st.markdown("### 🧠 AI Coach's Insight")
-        st.info(insight_text)
+        st.markdown(formatted_output)
+
 except Exception as e:
-    st.warning(f"⚠️ Unable to fetch insights from Groq: {e}")
+    st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")

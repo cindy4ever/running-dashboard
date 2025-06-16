@@ -138,6 +138,9 @@ else:
                 "Give 3 short, actionable coaching insights in bullet points. "
                 "Avoid repeating stats. Instead, explain what to adjust, improve, or learn. "
                 "Assume the runner is training for Sydney marathon in Aug 31st."
+                "make it concise and practical, focusing on recent progress and next steps."
+                "in both English and simplified Chinese, with the English first, then Chinese."
+                "Do not label the languages or add headings. Just alternate lines."
             )
 
             response = client.chat.completions.create(

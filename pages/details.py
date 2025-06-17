@@ -157,14 +157,12 @@ else:
     try:
         with st.spinner("🧠 Generating AI coach's insights..."):
             prompt = (
-                f"You are a marathon running coach analyzing this workout: {run_summary}. "
-                "Give 3 short, actionable coaching insights in bullet points. "
-                "Avoid repeating stats. Instead, explain what to adjust, improve, or learn. "
-                "Assume the runner is training for Sydney marathon in Aug 31st."
-                "make it concise and practical, focusing on recent progress and next steps."
+                f"You are a bilingual marathon running coach analyzing this workout: {run_summary}. Prepare for Sydney Marathon Aug 31 2025. "
+                "Do NOT summarize the data. Instead, give 3 short coaching insights or training tips. "
+                "Each should help the runner improve fitness, avoid injury, or prepare for their marathon. "
                 "First, list the 3 bullet points in English. "
                 "Then, list the same 3 insights translated into Chinese using 简体中文 (Simplified Chinese, not Traditional). "
-                "Use modern, simple vocabulary. Do not include section headings or labels."
+                "Use modern, simple vocabulary. Do NOT include any headings or labels — just clean bullet points."
             )
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",

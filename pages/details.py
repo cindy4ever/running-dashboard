@@ -162,10 +162,10 @@ else:
                 "Avoid repeating stats. Instead, explain what to adjust, improve, or learn. "
                 "Assume the runner is training for Sydney marathon in Aug 31st."
                 "make it concise and practical, focusing on recent progress and next steps."
-                "in both English and simplified Chinese, with the English first, then Chinese."
-                "Do not label the languages or add headings. Just alternate lines."
+                "First, list the 3 bullet points in English. "
+                "Then, list the same 3 insights translated into Chinese using 简体中文 (Simplified Chinese, not Traditional). "
+                "Use modern, simple vocabulary. Do not include section headings or labels."
             )
-
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[

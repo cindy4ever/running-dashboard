@@ -60,6 +60,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC&display=swap" rel="stylesheet">
+<style>
+  html, body, div, p, span, td {
+    font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif !important;
+  }
+</style>
+""", unsafe_allow_html=True)
 
 # Inject Font Awesome
 st.markdown("""

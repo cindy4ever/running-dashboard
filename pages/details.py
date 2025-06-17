@@ -42,6 +42,20 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# Add Home button to return to dashboard
+st.markdown(
+    """
+    <div style='text-align: right; margin-bottom: 10px;'>
+        <a href="/" target="_self" style='text-decoration: none;'>
+            <button style='padding: 6px 16px; font-size: 15px; border: none; background-color: #4CAF50; color: white; border-radius: 6px; cursor: pointer;'>
+                🏠 Home
+            </button>
+        </a>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 # Connect to DuckDB
 con = duckdb.connect("running.duckdb")

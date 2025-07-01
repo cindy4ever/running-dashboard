@@ -4,7 +4,7 @@ import streamlit as st
 import duckdb
 import os
 from dotenv import load_dotenv
-from get_strava_data import sync_activities
+from data_ingestion import sync_activities
 
 import folium
 from folium.plugins import HeatMap

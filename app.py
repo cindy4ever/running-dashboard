@@ -152,6 +152,7 @@ class ImprovedRunClassifier:
     def extract_features(self, df):
         """Extract comprehensive features for better classification"""
         features = pd.DataFrame()
+        features["activity_id"] = df["activity_id"] 
         
         # Basic features
         features['distance_km'] = df['distance_km']
@@ -221,22 +222,36 @@ class ImprovedRunClassifier:
         """Main classification method using rule-based approach first, then clustering"""
         if len(features) < 5:
             return ['unknown'] * len(features)
-        
-        # Initialize run types list
+    
         run_types = ['unknown'] * len(features)
-        
-        # Rule-based classification first (more reliable for clear cases)
+    
         for i, row in features.iterrows():
             distance = row['distance_km']
             variability = row['variability_score']
             intensity = row['intensity_score']
             work_rest = row['work_rest_ratio']
             high_intensity_pct = row['high_intensity_time']
-            
-            # Clear rule-based classifications
-            if distance >= 20:
+            pace = row['avg_pace']
+            activity_id = row['activity_id']
+        
+            skip_interval_check = distance > 6  # ✅ Hard rule: intervals must be ≤ 6km
+
+            # 🧠 Debug
+            # if activity_id in [14980216184]:  # Add more IDs if needed
+            #     print(f"\n=== DEBUG: Activity {activity_id} ===")
+            #     print(f"Distance: {distance}")
+            #     print(f"Variability: {variability}")
+            #     print(f"Intensity: {intensity}")
+            #     print(f"Work/Rest: {work_rest}")
+            #     print(f"High Intensity %: {high_intensity_pct}")
+            #     print(f"Pace: {pace}")
+
+            # ✅ Rule-based logic
+            if distance >= 15:
                 run_types[i] = 'long run'
-            elif distance <= 4 and (variability > 0.4 or work_rest > 0.15):
+            elif not skip_interval_check and variability > 0.25 and work_rest > 0.25 and high_intensity_pct > 0.2:
+                run_types[i] = 'interval'
+            elif not skip_interval_check and variability > 0.3 and pace < 5.5 and intensity < 0.5:
                 run_types[i] = 'interval'
             elif distance <= 6 and variability < 0.2 and intensity < 0.6:
                 run_types[i] = 'easy run'
@@ -244,37 +259,36 @@ class ImprovedRunClassifier:
                 run_types[i] = 'tempo run'
             elif distance <= 8 and intensity > 0.75:
                 run_types[i] = 'speed work'
+            elif distance > 6 and variability > 0.3 and intensity > 0.5:
+                run_types[i] = 'tempo run'  # fallback for misclassified long intervals
+            elif distance <= 6 and variability > 0.3 and intensity < 0.5:
+                run_types[i] = 'interval'
             else:
-                # Leave as 'unknown' for clustering
-                continue
-        
-        # Use clustering for remaining 'unknown' runs
+                continue  # Let clustering handle unknowns
+
+            # ✅ Optional debug output
+            # if activity_id in [14980216184]:
+            #     print(f"Assigned Type: {run_types[i]}")
+            #     print("===============================")
+
+        # Clustering for unknowns
         unknown_indices = [i for i, rt in enumerate(run_types) if rt == 'unknown']
-        
-        if len(unknown_indices) > 3:  # Only cluster if we have enough unknowns
+        if len(unknown_indices) > 3:
             unknown_features = features.iloc[unknown_indices]
-            
-            # Scale features for clustering
             X_scaled = self.scaler.fit_transform(unknown_features)
-            
-            # Find optimal clusters for unknowns
             n_clusters = min(4, len(unknown_features))
             self.model = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
             cluster_labels = self.model.fit_predict(X_scaled)
-            
-            # Analyze clusters and assign names
             cluster_names = self._analyze_unknown_clusters(unknown_features, cluster_labels)
-            
-            # Assign clustered names to unknown runs
+
             for idx, cluster_id in enumerate(cluster_labels):
                 original_idx = unknown_indices[idx]
                 run_types[original_idx] = cluster_names.get(cluster_id, 'recovery run')
-        
-        # Fill any remaining unknowns with 'recovery run'
+
         run_types = ['recovery run' if rt == 'unknown' else rt for rt in run_types]
-        
         self.is_trained = True
         return run_types
+
     
     def _analyze_unknown_clusters(self, features, labels):
         """Analyze clusters for unknown runs and assign names"""
@@ -291,16 +305,17 @@ class ImprovedRunClassifier:
             avg_work_rest = cluster_data['work_rest_ratio'].mean()
             
             # Assign names based on cluster characteristics
-            if avg_distance > 15:
+            if avg_distance >= 15:
                 name = "long run"
-            elif avg_variability > 0.5:
-                name = "fartlek"
+            elif avg_distance <= 6 and avg_work_rest > 0.15 and avg_variability > 0.3:
+                name = "interval"
             elif avg_intensity > 0.7:
                 name = "tempo run"
-            elif avg_distance < 8 and avg_work_rest > 0.1:
-                name = "interval"
+            elif avg_distance < 8 and avg_variability < 0.2 and avg_intensity < 0.5:
+                name = "easy run"
             else:
                 name = "recovery run"
+
             
             cluster_names[cluster_id] = name
         

@@ -581,28 +581,32 @@ with col2:
     st.altair_chart(chart_pace)
 
 # Weekly totals
-st.header("📊 Weekly Distance")
 df_week = df.groupby("week_start").agg(
     distance_km=("distance_km", "sum"),
     num_runs=("distance_km", "count")
 ).reset_index().sort_values("week_start")
 df_week["cumulative_distance"] = df_week["distance_km"].cumsum()
 
+# Weekly distance chart
 chart_week = alt.Chart(df_week).mark_bar().encode(
     x=alt.X("week_start:T", title="Week Starting", axis=alt.Axis(format="%Y-%m-%d", labelAngle=-45)),
     y=alt.Y("distance_km", title="Total Distance (km)"),
     tooltip=["week_start", "distance_km", "num_runs"]
 ).properties(width=700, height=300)
 
+# Cumulative distance chart
 chart_cumulative = alt.Chart(df_week).mark_line(point=True).encode(
     x="week_start:T",
     y="cumulative_distance",
     tooltip=["week_start", "cumulative_distance"]
 ).properties(width=700, height=300)
 
+# Show headers directly above each chart
+st.header("📊 Weekly Distance")
+st.altair_chart(chart_week, use_container_width=True)
+
 st.header("📈 Cumulative Distance (per Week)")
-st.altair_chart(chart_week)
-st.altair_chart(chart_cumulative)
+st.altair_chart(chart_cumulative, use_container_width=True)
 
 # Enhanced Run Table with better run types
 st.markdown("## 📋 Run Table")

@@ -1,4 +1,5 @@
 import streamlit as st
+import altair as alt
 import duckdb
 import pandas as pd
 import polyline
@@ -65,6 +66,72 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def get_streaming_data(con, run_id):
+    query = f"""
+        SELECT time_sec, heartrate, velocity_smooth
+        FROM run_streams
+        WHERE activity_id = {run_id}
+        ORDER BY time_sec
+    """
+    df_stream = con.execute(query).fetchdf()
+
+    df_stream["pace"] = 1000 / (df_stream["velocity_smooth"] * 60)  # Convert m/s to min/km
+    df_stream = df_stream[(df_stream["pace"] < 20) & (df_stream["pace"] > 2)]  # Filter noisy data
+    df_stream = df_stream[(df_stream["heartrate"] > 60) & (df_stream["heartrate"] < 220)]
+    return df_stream
+
+def plot_strava_style_chart(df_stream):
+    if df_stream.empty or "velocity_smooth" not in df_stream or "heartrate" not in df_stream:
+        st.warning("⚠️ No streaming pace or heart rate data found.")
+        return
+
+    df_stream = df_stream.copy()
+    df_stream = df_stream.sort_values("time_sec")
+
+    # Compute cumulative distance (km) from velocity and time
+    df_stream["delta_time"] = df_stream["time_sec"].diff().fillna(0)
+    df_stream["delta_dist_m"] = df_stream["velocity_smooth"] * df_stream["delta_time"]
+    df_stream["distance_km"] = df_stream["delta_dist_m"].cumsum() / 1000
+
+    # Convert velocity to pace in min/km
+    df_stream["pace"] = 1000 / (df_stream["velocity_smooth"] * 60)
+    df_stream = df_stream[(df_stream["pace"] > 3) & (df_stream["pace"] < 12)]  # filter outliers
+
+    # Smooth both pace and heart rate
+    df_stream["pace_smooth"] = df_stream["pace"].rolling(window=7, min_periods=1).mean()
+    df_stream["hr_smooth"] = df_stream["heartrate"].rolling(window=7, min_periods=1).mean()
+
+    # 🎽 Pace chart (top)
+    pace_chart = alt.Chart(df_stream).mark_line(color="steelblue").encode(
+        x=alt.X("distance_km", title="Distance (km)"),
+        y=alt.Y("pace_smooth", title="Pace (min/km)", scale=alt.Scale(zero=False)),
+        tooltip=["distance_km", "pace_smooth"]
+    ).properties(height=180)
+
+    # ❤️ Heart rate chart (bottom)
+    hr_chart = alt.Chart(df_stream).mark_line(color="crimson").encode(
+        x=alt.X("distance_km", title="Distance (km)"),
+        y=alt.Y("hr_smooth", title="Heart Rate (bpm)", scale=alt.Scale(zero=False)),
+        tooltip=["distance_km", "hr_smooth"]
+    ).properties(height=180)
+
+    # 🧱 Stack vertically
+    st.altair_chart(alt.vconcat(pace_chart, hr_chart).resolve_scale(y='independent'), use_container_width=True)
+
+    if df_stream.empty or 'velocity_smooth' not in df_stream or 'heartrate' not in df_stream:
+        st.warning("No streaming data available for chart.")
+        return
+
+    # Compute derived metrics
+    df_stream = df_stream.copy()
+    df_stream = df_stream.sort_values("time_sec")
+    df_stream["distance_km"] = (df_stream["velocity_smooth"].fillna(0) * df_stream["time_sec"]).cumsum() / 1000
+    df_stream["pace"] = 1000 / (df_stream["velocity_smooth"] * 60)
+    df_stream = df_stream[(df_stream["pace"] > 3) & (df_stream["pace"] < 12)]  # remove spikes
+
+    # Optional smoothing with rolling average
+    df_stream["pace_smooth"] = df_stream["pace"].rolling(window=5, min_periods=1).mean()
+    df_stream["hr_smooth"] = df_stream["heartrate"].rolling(window=5, min_periods=1).mean()
 
 # Connect to DuckDB
 con = duckdb.connect("running.duckdb")
@@ -106,6 +173,11 @@ duration_min = run["moving_time_min"]
 total_seconds = int(duration_min * 60)
 duration_str = str(timedelta(seconds=total_seconds))
 col4.metric("⏳ Duration", duration_str)
+
+st.subheader("📈 Streaming Pace and Heart Rate")
+df_stream = get_streaming_data(con, run_id)
+if not df_stream.empty:
+    plot_strava_style_chart(df_stream)
 
 
 # Route Map using OpenStreetMap + auto-centering

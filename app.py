@@ -463,7 +463,7 @@ else:
                 sync_activities(limit=None, full_sync=True)
                 ingest_oura_data(start_date=START_DATE, end_date=TODAY)
                 st.success("✅ Full history sync complete.")
-                st.experimental_rerun()
+                st.rerun()
 
 # ✅ 2. Safe display of last run date
 if "start_date_local" in df.columns and not df.empty:

@@ -460,7 +460,7 @@ else:
     with sync_cols[3]:
         if st.button("🚨 Full History Sync"):
             with st.spinner("Performing full sync from 2025-02-18..."):
-                sync_activities(limit=None, after=START_DATE, before=TODAY)
+                sync_activities(limit=None, full_sync=True)
                 ingest_oura_data(start_date=START_DATE, end_date=TODAY)
                 st.success("✅ Full history sync complete.")
                 st.experimental_rerun()

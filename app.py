@@ -421,22 +421,12 @@ if len(df) >= 5:
         #         st.write("• Remaining → ML Clustering")
 
 # Add week_start
-df["week_start"] = df["start_date_local"] - pd.to_timedelta(df["start_date_local"].dt.weekday, unit="d")
-df["week_start"] = df["week_start"].dt.date
-
-# Countdown
 st.title("Road to Sydney Marathon 🏃‍♀️")
 marathon_date = datetime.date(2025, 8, 31)
 today = datetime.date.today()
 days_remaining = (marathon_date - today).days
 st.markdown(f"### ⏳ Countdown: **{days_remaining} days** until Sydney Marathon 🏅🎉")
-last_run_date = df["start_date_local"].max()
 
-# Show last synced run
-last_run_date = df["start_date_local"].max()
-st.markdown(f"### 🕓 Last Run Recorded: `{last_run_date.strftime('%Y-%m-%d %H:%M:%S')}`")
-
-# Show sync buttons
 st.markdown("### 🔄 Manual Sync Controls")
 
 sync_cols = st.columns([1.5, 1.5, 1.2, 1.2])
@@ -468,6 +458,21 @@ else:
                 sync_activities(limit=200)
                 st.success("✅ Strava data synced.")
 
+# ✅ 2. Safe display of last run date
+if "start_date_local" in df.columns and not df.empty:
+    last_run_date = df["start_date_local"].max()
+    if pd.notna(last_run_date):
+        st.markdown(f"### 🕓 Last Run Recorded: `{last_run_date.strftime('%Y-%m-%d %H:%M:%S')}`")
+    else:
+        st.markdown("### 🕓 Last Run Recorded: `No data available`")
+else:
+    st.markdown("### 🕓 Last Run Recorded: `No runs found`")
+
+# ✅ 3. Week start column (only after df is validated)
+if not df.empty and "start_date_local" in df.columns:
+    df["week_start"] = df["start_date_local"] - pd.to_timedelta(df["start_date_local"].dt.weekday, unit="d")
+    df["week_start"] = df["week_start"].dt.date
+    
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 m = folium.Map(zoom_start=12)

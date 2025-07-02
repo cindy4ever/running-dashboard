@@ -457,6 +457,13 @@ else:
             with st.spinner("Syncing recent Strava runs..."):
                 sync_activities(limit=200)
                 st.success("✅ Strava data synced.")
+    with sync_cols[3]:
+        if st.button("🚨 Full History Sync"):
+            with st.spinner("Performing full sync from 2025-02-18..."):
+                sync_activities(limit=None, after=START_DATE, before=TODAY)
+                ingest_oura_data(start_date=START_DATE, end_date=TODAY)
+                st.success("✅ Full history sync complete.")
+                st.experimental_rerun()
 
 # ✅ 2. Safe display of last run date
 if "start_date_local" in df.columns and not df.empty:
@@ -472,7 +479,7 @@ else:
 if not df.empty and "start_date_local" in df.columns:
     df["week_start"] = df["start_date_local"] - pd.to_timedelta(df["start_date_local"].dt.weekday, unit="d")
     df["week_start"] = df["week_start"].dt.date
-    
+
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 m = folium.Map(zoom_start=12)

@@ -104,7 +104,7 @@ def plot_strava_style_chart(df_stream):
     # 🎽 Pace chart (top)
     pace_chart = alt.Chart(df_stream).mark_line(color="steelblue").encode(
         x=alt.X("distance_km", title="Distance (km)"),
-        y=alt.Y("pace_smooth", title="Pace (min/km)", scale=alt.Scale(zero=False)),
+        y=alt.Y("pace_smooth", title="Pace (min/km)", scale=alt.Scale(reverse=True)),
         tooltip=["distance_km", "pace_smooth"]
     ).properties(height=180)
 

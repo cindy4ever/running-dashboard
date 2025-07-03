@@ -22,7 +22,7 @@ Instead, the dashboard provides manual sync buttons at the top of the app.
   Updates latest Oura readiness, sleep, and activity scores.
 
 - 🏃 Sync Strava Only  
-  Fetches the latest 30 Strava activities only.
+  Fetches the latest 10 Strava activities only.
 
 These controls help avoid unnecessary API usage and support fine-grained syncing.
 
@@ -51,7 +51,7 @@ To enable automatic syncing (e.g. in development), set:
 
 - Weekly and monthly training analytics
 - ML-based run classification (long run, tempo, interval, etc.)
-- Streaming pace and heart rate metrics
+- Streaming pace and heart rate metrics charts
 - AI insights powered by Groq (LLaMA 3.1)
 - GPS route heatmaps using Folium
 - All data stored in DuckDB for speed and portability
@@ -82,7 +82,7 @@ Create a `.env` file with your API keys:
 
 ## 🛡️ Disclaimer
 
-This is a personal tool for marathon training analysis. It is not intended for medical or diagnostic purposes.
+This is a personal tool for marathon training analysis.
 
 Built by Cindy ❤️
 Inspired by a love for running 🏃🏻‍♀️, data, and Sydney 🐨

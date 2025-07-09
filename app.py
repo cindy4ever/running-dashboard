@@ -114,13 +114,13 @@ streaming_features_df = con.execute("""
         COUNT(CASE WHEN hr_change > 15 THEN 1 END) * 1.0 / NULLIF(COUNT(*), 0) AS effort_spike_rate,
         
         -- Time in high intensity (assuming max HR ~190)
-        COUNT(CASE WHEN heartrate > 152 THEN 1 END) * 1.0 / NULLIF(COUNT(heartrate), 0) AS high_intensity_pct,
+        COUNT(CASE WHEN heartrate > 141 THEN 1 END) * 1.0 / NULLIF(COUNT(heartrate), 0) AS high_intensity_pct,
         
         -- Work-to-rest ratio for intervals
         CASE 
-            WHEN COUNT(CASE WHEN heartrate > 152 THEN 1 END) > 0 THEN
-                COUNT(CASE WHEN heartrate > 152 THEN 1 END) * 1.0 / 
-                NULLIF(COUNT(CASE WHEN heartrate <= 152 AND heartrate > 0 THEN 1 END), 0)
+            WHEN COUNT(CASE WHEN heartrate > 141 THEN 1 END) > 0 THEN
+                COUNT(CASE WHEN heartrate > 141 THEN 1 END) * 1.0 / 
+                NULLIF(COUNT(CASE WHEN heartrate <= 141 AND heartrate > 0 THEN 1 END), 0)
             ELSE 0
         END AS work_rest_ratio,
         
@@ -246,15 +246,18 @@ class ImprovedRunClassifier:
             #     print(f"High Intensity %: {high_intensity_pct}")
             #     print(f"Pace: {pace}")
 
+            
             # ✅ Rule-based logic
             if distance >= 15:
                 run_types[i] = 'long run'
-            elif not skip_interval_check and variability > 0.25 and work_rest > 0.25 and high_intensity_pct > 0.2:
+            elif not skip_interval_check and variability > 0.25 and work_rest > 0.23 and high_intensity_pct > 0.18:
                 run_types[i] = 'interval'
             elif not skip_interval_check and variability > 0.3 and pace < 5.5 and intensity < 0.5:
                 run_types[i] = 'interval'
             elif distance <= 6 and variability < 0.2 and intensity < 0.6:
                 run_types[i] = 'easy run'
+            elif distance >= 5 and 5.5 <= pace <= 6.3 and variability < 0.25:
+                run_types[i] = 'tempo run'
             elif 4 < distance <= 12 and variability > 0.4:
                 run_types[i] = 'tempo run'
             elif distance <= 8 and intensity > 0.75:
@@ -370,13 +373,13 @@ def get_enhanced_streaming_features(con):
                 COUNT(CASE WHEN h.hr_change > 10 THEN 1 END) * 1.0 / s.total_points AS effort_spike_rate,
                 
                 -- Time in high intensity (>80% estimated max HR)
-                COUNT(CASE WHEN h.heartrate > 148 THEN 1 END) * 1.0 / s.total_points AS high_intensity_pct,
+                COUNT(CASE WHEN h.heartrate > 141 THEN 1 END) * 1.0 / s.total_points AS high_intensity_pct,
                 
                 -- Work-to-rest ratio for intervals
                 CASE 
-                    WHEN COUNT(CASE WHEN h.heartrate <= 148 AND h.heartrate > 0 THEN 1 END) > 0 THEN
-                        COUNT(CASE WHEN h.heartrate > 148 THEN 1 END) * 1.0 / 
-                        COUNT(CASE WHEN h.heartrate <= 148 AND h.heartrate > 0 THEN 1 END)
+                    WHEN COUNT(CASE WHEN h.heartrate <= 141 AND h.heartrate > 0 THEN 1 END) > 0 THEN
+                        COUNT(CASE WHEN h.heartrate > 141 THEN 1 END) * 1.0 / 
+                        COUNT(CASE WHEN h.heartrate <= 141 AND h.heartrate > 0 THEN 1 END)
                     ELSE 0
                 END AS work_rest_ratio,
                 

@@ -151,9 +151,12 @@ if df.empty:
     st.stop()
 
 run = df.iloc[0]
+run_type_row = con.execute("SELECT run_type FROM run_types WHERE activity_id = ?", (int(run_id),)).fetchone()
+run_type = run_type_row[0] if run_type_row else "unknown"
 
 # Title
 st.title(f"🏃‍♀️ {run['run_name']}")
+st.markdown(f"**🏷️ Run Type:** `{run_type}`")
 st.markdown(f"**📅 {run['start_date_local'].strftime('%A, %B %d, %Y at %H:%M')}**")
 
 
@@ -209,6 +212,7 @@ run_summary = {
     "elevation_gain_m": int(run["total_elevation_gain_m"]),
     "avg_hr": int(run["average_heartrate"]) if not pd.isna(run["average_heartrate"]) else "N/A",
     "max_hr": int(run["max_heartrate"]) if not pd.isna(run["max_heartrate"]) else "N/A",
+    "run_type": run_type,
     "date": run["start_date_local"].strftime("%Y-%m-%d")
 }
 
@@ -233,7 +237,7 @@ else:
                 "Do NOT summarize the data. Instead, give 3 short coaching insights or training tips. "
                 "Each should help the runner improve fitness, avoid injury, or prepare for their marathon. "
                 "First, list the 3 bullet points in English. "
-                "Then, list the same 3 insights translated into Chinese using 简体中文 (Simplified Chinese, not Traditional). "
+                "Then, repeat the exact same 3 insights in Simplified Chinese. Use 简体中文 only — do not use Vietnamese or any other language."
                 "Use modern, simple vocabulary. Do NOT include any headings or labels — just clean bullet points."
             )
             response = client.chat.completions.create(

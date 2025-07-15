@@ -415,6 +415,25 @@ if len(df) >= 5:
         run_types = classifier.classify_runs(features)
         df['run_type'] = run_types
         
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS run_types (
+                activity_id BIGINT PRIMARY KEY,
+                run_type TEXT,
+                classified_at TIMESTAMP
+            )
+        """)
+
+        # Insert or update classified run types
+        now = datetime.datetime.utcnow().isoformat()
+
+        for activity_id, run_type in zip(df["activity_id"], df["run_type"]):
+            con.execute("""
+                INSERT INTO run_types (activity_id, run_type, classified_at)
+                VALUES (?, ?, ?)
+                ON CONFLICT(activity_id) DO UPDATE SET 
+                    run_type = excluded.run_type,
+                    classified_at = excluded.classified_at
+            """, (activity_id, run_type, now))
 
         
         # Show improved classification summary

@@ -34,6 +34,24 @@ client = OpenAI(
 # Page config
 st.set_page_config(page_title="Road to Sydney Marathon 🏃‍♀️", layout="wide")
 
+st.markdown(
+    """
+    <style>
+    /* Make the main container span the full browser width */
+    .block-container {
+        max-width: 100% !important;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    /* Force iframe maps to fill the container */
+    iframe {
+        width: 100% !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Hide sidebar and add styles
 st.markdown("""
     <style>

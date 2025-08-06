@@ -17,7 +17,7 @@ import polyline
 import datetime
 
 from openai import OpenAI
-from streamlit.components.v1 import html
+import streamlit.components.v1 as components
 from sklearn.preprocessing import StandardScaler, RobustScaler
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
@@ -520,13 +520,8 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-# Build folium map
-m = folium.Map(
-    zoom_start=12,
-    tiles="OpenStreetMap",
-    width="100%",
-    height="100%"
-)
+# Build Folium map
+m = folium.Map(zoom_start=12, width="100%", height="100%")
 all_points = []
 for _, row in df.iterrows():
     if pd.notna(row["summary_polyline"]):
@@ -538,37 +533,18 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Full standalone HTML (fixes narrow map issue)
+# Full Folium HTML
 html_content = m.get_root().render()
 
-# Responsive wrapper with CSS
+# Wrap for full width
 map_html = f"""
-<style>
-    .map-wrapper {{
-        position: relative;
-        width: 100%;
-        padding-bottom: 65%;  /* desktop aspect ratio */
-        height: 0;
-    }}
-    .map-wrapper > div {{
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-    }}
-    @media (max-width: 768px) {{
-        .map-wrapper {{
-            padding-bottom: 90%; /* taller for mobile */
-        }}
-    }}
-</style>
-<div class="map-wrapper">
-    <div>
-        {html_content}
-    </div>
+<div style="width:100%; height:100%;">
+    {html_content}
 </div>
 """
 
-# Render in Streamlit
-st.components.v1.html(map_html, height=700, scrolling=False)
+# Use components.html per new API
+components.html(map_html, height=700, width=1000, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

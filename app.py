@@ -539,12 +539,18 @@ html_content = m.get_root().render()
 # Responsive container (width:100%)
 map_html = f"""
 <div style="width:100%; height:100%;">
+    <style>
+        .folium-map {{
+            width: 100% !important;
+            height: 100% !important;
+        }}
+    </style>
     {html_content}
 </div>
 """
 
 # Fluid iframe (width fills page)
-components.html(map_html, height=700, width=None, scrolling=False)
+components.html(map_html, height=700, width=2000, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

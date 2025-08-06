@@ -538,7 +538,8 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-m = folium.Map(zoom_start=12, width="100%", height="800px")
+# Build folium map
+m = folium.Map(zoom_start=12, width="100%", height="100%")
 all_points = []
 for _, row in df.iterrows():
     if pd.notna(row["summary_polyline"]):
@@ -550,21 +551,22 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Force Folium container to be 100% width
+# Responsive container with fixed aspect ratio
 map_html = f"""
-<div style="width: 100%; height: 800px;">
-    {m._repr_html_()}
+<div style="position: relative; width: 100%; padding-bottom: 60%; height: 0;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+        {m._repr_html_()}
+    </div>
 </div>
-<script>
-    const foliumDiv = document.querySelector('.folium-map');
-    if (foliumDiv) {{
-        foliumDiv.style.width = "100%";
-        foliumDiv.style.height = "800px";
+<style>
+    .folium-map {{
+        width: 100% !important;
+        height: 100% !important;
     }}
-</script>
+</style>
 """
-st.components.v1.html(map_html, height=820, scrolling=False)
 
+st.components.v1.html(map_html, height=600, scrolling=False)
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")
 

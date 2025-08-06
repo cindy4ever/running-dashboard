@@ -538,7 +538,6 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-# Build folium map
 m = folium.Map(zoom_start=12, width="100%", height="800px")
 all_points = []
 for _, row in df.iterrows():
@@ -551,21 +550,19 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Inject CSS + JS to override Folium's internal map size
+# Force Folium container to be 100% width
 map_html = f"""
-<div id="folium-map-container" style="width: 100%; height: 800px;">
+<div style="width: 100%; height: 800px;">
     {m._repr_html_()}
 </div>
 <script>
-    // Force map container to fill available space
-    const mapDiv = document.querySelector('#folium-map-container iframe');
-    if (mapDiv) {{
-        mapDiv.style.width = "100%";
-        mapDiv.style.height = "800px";
+    const foliumDiv = document.querySelector('.folium-map');
+    if (foliumDiv) {{
+        foliumDiv.style.width = "100%";
+        foliumDiv.style.height = "800px";
     }}
 </script>
 """
-
 st.components.v1.html(map_html, height=820, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types

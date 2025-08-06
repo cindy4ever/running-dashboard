@@ -520,8 +520,13 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-# Build Folium map
-m = folium.Map(zoom_start=12, width="100%", height="100%")
+# Build folium map
+m = folium.Map(
+    zoom_start=12,
+    tiles="OpenStreetMap",
+    width="100%",
+    height="100%"
+)
 all_points = []
 for _, row in df.iterrows():
     if pd.notna(row["summary_polyline"]):
@@ -533,16 +538,16 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Get full standalone HTML (fixes narrow-map issue)
+# Full standalone HTML (fixes narrow map issue)
 html_content = m.get_root().render()
 
-# Responsive wrapper (desktop vs mobile)
+# Responsive wrapper with CSS
 map_html = f"""
 <style>
     .map-wrapper {{
         position: relative;
         width: 100%;
-        padding-bottom: 60%; /* Default aspect ratio for desktop */
+        padding-bottom: 65%;  /* desktop aspect ratio */
         height: 0;
     }}
     .map-wrapper > div {{
@@ -551,7 +556,7 @@ map_html = f"""
     }}
     @media (max-width: 768px) {{
         .map-wrapper {{
-            padding-bottom: 90%; /* Taller for mobile */
+            padding-bottom: 90%; /* taller for mobile */
         }}
     }}
 </style>
@@ -563,7 +568,7 @@ map_html = f"""
 """
 
 # Render in Streamlit
-st.components.v1.html(map_html, height=650, scrolling=False)
+st.components.v1.html(map_html, height=700, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

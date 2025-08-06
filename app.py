@@ -520,13 +520,12 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-# Create folium map with full width + fixed height
+# Build folium map
 m = folium.Map(zoom_start=12, width="100%", height="800px")
 all_points = []
 for _, row in df.iterrows():
     if pd.notna(row["summary_polyline"]):
         all_points.extend(polyline.decode(row["summary_polyline"]))
-
 if all_points:
     HeatMap(all_points, radius=8, blur=6, min_opacity=0.5).add_to(m)
     lats, lons = zip(*all_points)
@@ -534,22 +533,22 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# CSS overrides: force full-width iframe + map container
-st.markdown("""
-    <style>
-        .stApp iframe {
-            width: 100% !important;
-            max-width: 100% !important;
-        }
-        .folium-map {
-            width: 100% !important;
-            height: 800px !important;
-        }
-    </style>
-""", unsafe_allow_html=True)
+# Inject CSS + JS to override Folium's internal map size
+map_html = f"""
+<div id="folium-map-container" style="width: 100%; height: 800px;">
+    {m._repr_html_()}
+</div>
+<script>
+    // Force map container to fill available space
+    const mapDiv = document.querySelector('#folium-map-container iframe');
+    if (mapDiv) {{
+        mapDiv.style.width = "100%";
+        mapDiv.style.height = "800px";
+    }}
+</script>
+"""
 
-# Render folium map directly (no file saving)
-st.components.v1.html(m._repr_html_(), height=820, scrolling=False)
+st.components.v1.html(map_html, height=820, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

@@ -551,22 +551,22 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Responsive container with fixed aspect ratio
+# Get HTML and replace fixed width with 100%
+html_content = m._repr_html_()
+html_content = html_content.replace('width: 100.0%; height: 100.0%;', 'width:100%;height:100%;')
+html_content = html_content.replace('width:450px;', 'width:100%;')
+
+# Responsive container
 map_html = f"""
-<div style="position: relative; width: 100%; padding-bottom: 60%; height: 0;">
+<div style="position: relative; width: 100%; padding-bottom: 80%; height: 0;">
     <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
-        {m._repr_html_()}
+        {html_content}
     </div>
 </div>
-<style>
-    .folium-map {{
-        width: 100% !important;
-        height: 100% !important;
-    }}
-</style>
 """
 
 st.components.v1.html(map_html, height=600, scrolling=False)
+
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")
 

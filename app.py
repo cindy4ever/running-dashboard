@@ -533,8 +533,8 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Render directly instead of saving to file
-st.components.v1.html(m._repr_html_(), height=600, scrolling=False)
+# Force fixed height and full width
+st.components.v1.html(m._repr_html_(), height=800, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

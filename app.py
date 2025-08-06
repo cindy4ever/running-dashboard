@@ -34,24 +34,6 @@ client = OpenAI(
 # Page config
 st.set_page_config(page_title="Road to Sydney Marathon 🏃‍♀️", layout="wide")
 
-st.markdown(
-    """
-    <style>
-    /* Make the main container span the full browser width */
-    .block-container {
-        max-width: 100% !important;
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-    /* Force iframe maps to fill the container */
-    iframe {
-        width: 100% !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # Hide sidebar and add styles
 st.markdown("""
     <style>
@@ -538,6 +520,7 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
+# Build Folium map
 m = folium.Map(zoom_start=12, width="100%", height="100%")
 all_points = []
 for _, row in df.iterrows():
@@ -550,35 +533,37 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Extract Folium HTML
-html_content = m._repr_html_()
-html_content = html_content.replace('width:450px;', 'width:100%;')  # widen map div
+# Get full standalone HTML (fixes narrow-map issue)
+html_content = m.get_root().render()
 
-# Add JS to force Leaflet to recalculate size after render
-resize_script = """
-<script>
-    setTimeout(function() {
-        var mapFrames = document.querySelectorAll('.folium-map');
-        mapFrames.forEach(function(el) {
-            if (el._leaflet_map) {
-                el._leaflet_map.invalidateSize();
-            }
-        });
-    }, 500);
-</script>
-"""
-
-# Responsive wrapper
+# Responsive wrapper (desktop vs mobile)
 map_html = f"""
-<div style="position: relative; width: 100%; padding-bottom: 80%; height: 0;">
-    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+<style>
+    .map-wrapper {{
+        position: relative;
+        width: 100%;
+        padding-bottom: 60%; /* Default aspect ratio for desktop */
+        height: 0;
+    }}
+    .map-wrapper > div {{
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+    }}
+    @media (max-width: 768px) {{
+        .map-wrapper {{
+            padding-bottom: 90%; /* Taller for mobile */
+        }}
+    }}
+</style>
+<div class="map-wrapper">
+    <div>
         {html_content}
     </div>
 </div>
-{resize_script}
 """
 
-st.components.v1.html(map_html, height=600, scrolling=False)
+# Render in Streamlit
+st.components.v1.html(map_html, height=650, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

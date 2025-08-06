@@ -533,8 +533,19 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Force fixed height and full width
-st.components.v1.html(m._repr_html_(), height=800, scrolling=False)
+# CSS + JS to enforce iframe dimensions
+map_html = f"""
+<style>
+iframe {{
+    width: 100% !important;
+    height: 800px !important;
+    border: none;
+}}
+</style>
+{m._repr_html_()}
+"""
+
+st.components.v1.html(map_html, height=820, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

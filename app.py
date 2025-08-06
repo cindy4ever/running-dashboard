@@ -538,7 +538,6 @@ if not df.empty and "start_date_local" in df.columns:
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
 
-# Build folium map
 m = folium.Map(zoom_start=12, width="100%", height="100%")
 all_points = []
 for _, row in df.iterrows():
@@ -551,18 +550,32 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-# Get HTML and replace fixed width with 100%
+# Extract Folium HTML
 html_content = m._repr_html_()
-html_content = html_content.replace('width: 100.0%; height: 100.0%;', 'width:100%;height:100%;')
-html_content = html_content.replace('width:450px;', 'width:100%;')
+html_content = html_content.replace('width:450px;', 'width:100%;')  # widen map div
 
-# Responsive container
+# Add JS to force Leaflet to recalculate size after render
+resize_script = """
+<script>
+    setTimeout(function() {
+        var mapFrames = document.querySelectorAll('.folium-map');
+        mapFrames.forEach(function(el) {
+            if (el._leaflet_map) {
+                el._leaflet_map.invalidateSize();
+            }
+        });
+    }, 500);
+</script>
+"""
+
+# Responsive wrapper
 map_html = f"""
 <div style="position: relative; width: 100%; padding-bottom: 80%; height: 0;">
     <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
         {html_content}
     </div>
 </div>
+{resize_script}
 """
 
 st.components.v1.html(map_html, height=600, scrolling=False)

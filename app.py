@@ -492,7 +492,7 @@ else:
     with sync_cols[2]:
         if st.button("🏃 Sync Strava Only"):
             with st.spinner("Syncing recent Strava runs..."):
-                sync_activities(limit=200)
+                sync_activities(limit=50)
                 st.success("✅ Strava data synced.")
     with sync_cols[3]:
         if st.button("🚨 Full History Sync"):
@@ -519,7 +519,8 @@ if not df.empty and "start_date_local" in df.columns:
 
 # Heatmap
 st.header("🔥 Heatmap of All Runs")
-m = folium.Map(zoom_start=12)
+
+m = folium.Map(zoom_start=12, width="100%", height="100%")
 all_points = []
 for _, row in df.iterrows():
     if pd.notna(row["summary_polyline"]):
@@ -532,9 +533,8 @@ if all_points:
 else:
     st.warning("No GPS data available to display heatmap.")
 
-m.save("map.html")
-with open("map.html", "r") as f:
-    html(f.read(), height=350)
+# Render directly instead of saving to file
+st.components.v1.html(m._repr_html_(), height=600, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

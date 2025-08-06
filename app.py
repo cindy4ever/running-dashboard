@@ -544,8 +544,22 @@ iframe {{
 </style>
 {m._repr_html_()}
 """
-
-st.components.v1.html(map_html, height=820, scrolling=False)
+st.markdown(
+    """
+    <style>
+    .element-container iframe {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .stComponent > div {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+st.components.v1.html(m._repr_html_(), height=800, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

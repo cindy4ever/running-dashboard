@@ -536,15 +536,15 @@ else:
 # Full Folium HTML
 html_content = m.get_root().render()
 
-# Wrap for full width
+# Responsive container (width:100%)
 map_html = f"""
 <div style="width:100%; height:100%;">
     {html_content}
 </div>
 """
 
-# Use components.html per new API
-components.html(map_html, height=700, width=1000, scrolling=False)
+# Fluid iframe (width fills page)
+components.html(map_html, height=700, width=None, scrolling=False)
 
 # # Enhanced Training Analysis with Run Types
 # st.header("🏃‍♀️ Training Analysis by Run Type")

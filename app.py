@@ -34,6 +34,16 @@ client = OpenAI(
 # Page config
 st.set_page_config(page_title="Road to Sydney Marathon 🏃‍♀️", layout="wide")
 
+# Auto-refresh every 11 hours (39,600,000 ms)
+st.markdown(
+    """
+    <script>
+        setTimeout(function() { window.location.reload(); }, 39600000);
+    </script>
+    """,
+    unsafe_allow_html=True
+)
+
 # Hide sidebar and add styles
 st.markdown("""
     <style>

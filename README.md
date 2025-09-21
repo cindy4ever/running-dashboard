@@ -1,88 +1,73 @@
-# 🏃 Running Dashboard – Road to Sydney Marathon
+# 🏃‍♀️ Running Dashboard
 
-This dashboard visualizes your marathon training using data from Strava, Oura Ring, and ML-based run classification. All data is stored locally in DuckDB.
-
----
-
-## 🔄 Manual Sync Controls
-
-Auto-sync is disabled in production (`DISABLE_SYNC = True` in `app.py`).  
-Instead, the dashboard provides manual sync buttons at the top of the app.
-
-### ✅ Sync Options in the UI
-
-- 🚨 Full Historical Sync  
-  Appears only when the database is missing (first-time setup).  
-  Syncs all Strava runs and Oura Ring data from 2025-02-18.
-
-- 🔁 Sync Last 30 Strava Runs + Oura  
-  Recommended daily sync. Pulls recent runs and Oura metrics.
-
-- 🩺 Sync Oura Only  
-  Updates latest Oura readiness, sleep, and activity scores.
-
-- 🏃 Sync Strava Only  
-  Fetches the latest 10 Strava activities only.
-
-These controls help avoid unnecessary API usage and support fine-grained syncing.
+A personal running dashboard powered by **Streamlit + DuckDB** with **Strava** & **Oura** integrations, ML-based run classification, weather insights, and future **LLM-based chat support**.
 
 ---
 
-## ⚙️ Configuration
+## 📦 Features
 
-In `app.py`:
-
-    # Disable auto-sync in production
-    DISABLE_SYNC = True
-
-    # Local DuckDB file
-    DUCKDB_PATH = "running.duckdb"
-
-    # Sync window start date
-    START_DATE = "2025-02-18"
-
-To enable automatic syncing (e.g. in development), set:
-
-    DISABLE_SYNC = False
+- 🏃 Strava API: Sync run GPS, heart rate, pace, elevation
+- 💍 Oura API: Ingest readiness, sleep, and activity metrics
+- 🌤️ Weather data: Get temp/humidity for each run from Open-Meteo Archive API
+- 🧠 Run classification: Auto-tag runs (recovery, long, intervals)
+- 📈 Visuals: Interactive charts (pace, HR, streaming segments)
+- 💬 AI assistant (WIP): Chat-based training insights using Groq API
+- 🦆 Local-first: Uses DuckDB to store and query all data
 
 ---
 
-## 🚀 Features
+## 🚀 Setup Instructions
 
-- Weekly and monthly training analytics
-- ML-based run classification (long run, tempo, interval, etc.)
-- Streaming pace and heart rate metrics charts
-- AI insights powered by Groq (LLaMA 3.1)
-- GPS route heatmaps using Folium
-- All data stored in DuckDB for speed and portability
+```bash
+git clone https://github.com/cindy4ever/running-dashboard.git
+cd running-dashboard
 
----
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
-## 🧪 Local Setup
+Create a `.env` file with:
 
-    git clone https://github.com/cindy4ever/running-dashboard.git
-    cd running-dashboard
-
-    python -m venv venv
-    source venv/bin/activate
-
-    pip install -r requirements.txt
-
-    # Launch the dashboard
-    streamlit run app.py
-
-Create a `.env` file with your API keys:
-
-    STRAVA_CLIENT_ID=your_strava_id
-    STRAVA_CLIENT_SECRET=your_strava_secret
-    GROQ_API_KEY=your_groq_key
-    OURA_PERSONAL_ACCESS_TOKEN=your_oura_token
+```dotenv
+STRAVA_CLIENT_ID=xxx
+STRAVA_CLIENT_SECRET=xxx
+STRAVA_REFRESH_TOKEN=xxx
+OURA_API_TOKEN=xxx
+```
 
 ---
 
-## 🛡️ Disclaimer
+## 🧬 Ingest Data
 
-This is a personal tool for marathon training analysis.
+Sync latest 30 runs and recent Oura data:
 
-Built by Cindy ❤️
-Inspired by a love for running 🏃🏻‍♀️, data, and Sydney 🐨
+```bash
+python data_ingestion.py
+```
+
+Backfill from a date range:
+
+```bash
+python data_ingestion.py --full --start_date=2025-01-01 --end_date=2025-09-20
+```
+
+💡 Weather for each run is auto-fetched based on GPS + timestamp.  
+⛅ Missing or `NULL` weather rows are re-queried on next sync.
+
+---
+
+## 📊 Run the Dashboard
+
+Launch the Streamlit app:
+
+```bash
+streamlit run app.py
+```
+
+- Use sidebar to explore trends
+- Click into a run to see:
+  - Map 🗺️
+  - Heart rate zones ❤️
+  - Streaming pace 📉
+  - Weather data 🌡️

@@ -23,6 +23,7 @@ from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from scipy.stats import zscore
+from chat_window import render_chat
 
 # Load .env
 load_dotenv()
@@ -32,7 +33,7 @@ client = OpenAI(
 )
 
 # Page config
-st.set_page_config(page_title="Road to Sydney Marathon 🏃‍♀️", layout="wide")
+st.set_page_config(page_title="Running Dashboard🏃‍♀️", layout="wide")
 
 # Auto-refresh every 11 hours (39,600,000 ms)
 st.markdown(
@@ -468,11 +469,8 @@ if len(df) >= 5:
         #         st.write("• Remaining → ML Clustering")
 
 # Add week_start
-st.title("Road to Sydney Marathon 🏃‍♀️")
-marathon_date = datetime.date(2025, 8, 31)
-today = datetime.date.today()
-days_remaining = (marathon_date - today).days
-st.markdown(f"### ⏳ Countdown: **{days_remaining} days** until Sydney Marathon 🏅🎉")
+st.title("Running Dashboard 🏃‍♀️")
+
 
 st.markdown("### 🔄 Manual Sync Controls")
 
@@ -698,49 +696,4 @@ df_display["Run Type"] = df_display["Run Type"].str.title()
 
 st.write(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
 
-# Enhanced AI summary with run type analysis
-cutoff = pd.to_datetime(datetime.datetime.now().date() - datetime.timedelta(days=7))
-recent_runs = df[df["start_date_local"] >= cutoff]
-
-# Enhanced summary stats including run type distribution
-run_type_dist = df['run_type'].value_counts().to_dict() if 'run_type' in df.columns else {}
-recent_run_types = recent_runs['run_type'].value_counts().to_dict() if len(recent_runs) > 0 and 'run_type' in recent_runs.columns else {}
-
-summary_stats = {
-    "weekly_distance_km": round(recent_runs["distance_km"].sum(), 2),
-    "longest_run_km": round(df["distance_km"].max(), 2),
-    "average_pace_min_per_km": round(df["pace_min_per_km"].mean(), 2),
-    "average_hr": round(df["average_heartrate"].mean(), 1),
-    "run_count_last_7_days": len(recent_runs),
-    "total_runs": len(df),
-    "run_type_distribution": run_type_dist,
-    "recent_run_types": recent_run_types,
-    "goal": "Prepare for Sydney Marathon on August 31, 2025"
-}
-
-if recent_runs.empty:
-    st.warning("🚨 No runs detected in the past 7 days. Consider syncing your latest Strava activities.")
-else:
-    try:
-        with st.spinner("🧠 Analyzing your training with Groq..."):
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": "You are a bilingual marathon running coach with expertise in training periodization."},
-                    {"role": "user",
-                     "content": (
-                        f"Based on these comprehensive stats: {summary_stats}, give 3 short, specific training insights for this marathon runner. "
-                        "Consider their run type distribution and training balance. "
-                        "First, list the 3 bullet points in English. "
-                        "Then, list the same 3 insights translated into Chinese using 简体中文. "
-                        "Use modern, simple vocabulary. Do not include section headings or labels."
-                    )}
-                ]
-            )
-            insight_text = response.choices[0].message.content.strip()
-            lines = [line for line in insight_text.split("\n") if not line.lower().startswith(("english", "chinese", "insight"))]
-            formatted_output = "\n\n".join(lines)
-            st.markdown("### 🧠 AI Coach's Insight")
-            st.markdown(formatted_output)
-    except Exception as e:
-        st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")
+render_chat()

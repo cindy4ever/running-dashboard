@@ -1,4 +1,5 @@
 import duckdb
+import time
 import os
 import pandas as pd
 from dotenv import load_dotenv
@@ -44,6 +45,18 @@ CREATE TABLE IF NOT EXISTS run_streams (
 )
 """)
 
+con.execute("""
+CREATE TABLE IF NOT EXISTS weather_by_run (
+    activity_id BIGINT PRIMARY KEY,
+    timestamp TEXT,
+    lat DOUBLE,
+    lon DOUBLE,
+    temp_c DOUBLE,
+    humidity_pct DOUBLE
+)
+""")
+
+
 def refresh_strava_token():
     response = requests.post(
         url="https://www.strava.com/oauth/token",
@@ -72,6 +85,29 @@ def get_activity_streams(client, activity_id):
     except Exception as e:
         print(f"❌ Error fetching streams for {activity_id}: {e}")
         return None
+    
+def fetch_weather(lat, lon, timestamp):
+    date_str = timestamp.split("T")[0]
+    url = (
+        f"https://archive-api.open-meteo.com/v1/archive?"
+        f"latitude={lat}&longitude={lon}"
+        f"&start_date={date_str}&end_date={date_str}"
+        f"&hourly=temperature_2m,relative_humidity_2m"
+        f"&timezone=auto"
+    )
+    try:
+        resp = requests.get(url, timeout=10)
+        data = resp.json()
+        target_hour = timestamp[:13]  # e.g. '2025-09-20T07'
+        for i, t in enumerate(data['hourly']['time']):
+            if t.startswith(target_hour):
+                return {
+                    "temp_c": data['hourly']['temperature_2m'][i],
+                    "humidity_pct": data['hourly']['relative_humidity_2m'][i],
+                }
+    except Exception as e:
+        print(f"⚠️ Weather fetch failed for {timestamp} @ {lat},{lon}: {e}")
+    return None
 
 def sync_activities(limit=None, full_sync=False):
     access_token, refresh_token, token_expires_at = refresh_strava_token()
@@ -79,7 +115,7 @@ def sync_activities(limit=None, full_sync=False):
     client = Client(access_token=access_token)
     client.refresh_token = refresh_token
     client.token_expires_at = token_expires_at
-    client.token_expires = True # Force token refresh
+    client.token_expires = True  # Force token refresh
 
     count_new = 0
     count_updated = 0
@@ -197,6 +233,48 @@ def sync_activities(limit=None, full_sync=False):
                 ) VALUES (?, ?, ?, ?, ?, ?)
             """, [(activity.id, i, hr, v, t, d) for i, hr, v, t, d in zipped])
 
+        # Weather ingestion
+                # Weather ingestion
+        if lat is not None and lon is not None and start_date_local:
+            timestamp = start_date_local.isoformat()
+            existing = con.execute(
+                "SELECT temp_c, humidity_pct FROM weather_by_run WHERE activity_id = ?",
+                (activity.id,)
+            ).fetchone()
+
+            if not existing:
+                # No weather yet — fetch and insert if available
+                weather = fetch_weather(lat, lon, timestamp)
+                if weather and weather["temp_c"] is not None and weather["humidity_pct"] is not None:
+                    con.execute("""
+                        INSERT INTO weather_by_run 
+                        (activity_id, timestamp, lat, lon, temp_c, humidity_pct)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                    """, (
+                        activity.id, timestamp, lat, lon,
+                        weather["temp_c"], weather["humidity_pct"]
+                    ))
+                    print(f"✅ Weather added for {activity.id}")
+                else:
+                    print(f"❌ Weather not available for {activity.id} — will retry later.")
+                time.sleep(0.5)
+
+            elif existing[0] is None or existing[1] is None:
+                # Weather row exists but has nulls — retry
+                weather = fetch_weather(lat, lon, timestamp)
+                if weather and weather["temp_c"] is not None and weather["humidity_pct"] is not None:
+                    con.execute("""
+                        UPDATE weather_by_run
+                        SET temp_c = ?, humidity_pct = ?
+                        WHERE activity_id = ?
+                    """, (weather["temp_c"], weather["humidity_pct"], activity.id))
+                    print(f"🔁 Weather updated for {activity.id}")
+                    time.sleep(0.5)
+                else:
+                    print(f"⚠️ Still no weather for {activity.id}, keeping NULLs.")
+            else:
+                print(f"⏭️ Weather already exists and complete for {activity.id}")
+        
     print(f"✅ Sync complete! New: {count_new}, Updated: {count_updated}")
 
 
@@ -234,13 +312,20 @@ def ingest_oura_data(start_date=None, end_date=None):
                 continue
 
             df = pd.DataFrame(data)
+
+            # Convert ISO date strings to datetime
             for col in df.columns:
                 if df[col].dtype == object and df[col].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}").any():
                     df[col] = pd.to_datetime(df[col], errors="ignore")
 
-            con.execute(f"CREATE TABLE IF NOT EXISTS oura_{name} AS SELECT * FROM df LIMIT 0")
-            con.execute(f"DELETE FROM oura_{name} WHERE day BETWEEN '{start_date}' AND '{end_date}'")
-            con.execute(f"INSERT INTO oura_{name} SELECT * FROM df")
+            # Convert long digit columns (like class_5_min) to TEXT
+            for col in df.columns:
+                if df[col].dtype == object and df[col].astype(str).str.fullmatch(r"\d{20,}").any():
+                    df[col] = df[col].astype(str)
+
+            # Reset schema completely each time to avoid column mismatch
+            con.execute(f"DROP TABLE IF EXISTS oura_{name}")
+            con.execute(f"CREATE TABLE oura_{name} AS SELECT * FROM df")
 
             print(f"✅ Ingested Oura {name} data: {len(df)} records.")
         except Exception as e:
@@ -255,7 +340,7 @@ if __name__ == "__main__":
 
     if args.full:
         print("🔁 Running full Strava sync...")
-        sync_activities(limit=None, after=args.start_date, before=args.end_date)
+        sync_activities(limit=None, full_sync=True)
 
         print("🔁 Running full Oura backfill...")
         ingest_oura_data(start_date=args.start_date, end_date=args.end_date)

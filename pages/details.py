@@ -6,6 +6,7 @@ import polyline
 import folium
 from streamlit.components.v1 import html
 from datetime import timedelta
+from chat_window import render_chat
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -151,6 +152,18 @@ if df.empty:
     st.stop()
 
 run = df.iloc[0]
+
+weather = con.execute(
+    "SELECT temp_c, humidity_pct FROM weather_by_run WHERE activity_id = ?",
+    (int(run_id),)
+).fetchone()
+
+if weather and all(x is not None for x in weather):
+    st.subheader("🌤️ Weather at Time of Run")
+    temp_c, humidity_pct = weather
+    st.markdown(f"- **Temperature:** {temp_c:.1f} °C")
+    st.markdown(f"- **Humidity:** {humidity_pct:.0f}%")
+
 run_type_row = con.execute("SELECT run_type FROM run_types WHERE activity_id = ?", (int(run_id),)).fetchone()
 run_type = run_type_row[0] if run_type_row else "unknown"
 
@@ -216,46 +229,4 @@ run_summary = {
     "date": run["start_date_local"].strftime("%Y-%m-%d")
 }
 
-# Create concise instruction prompt
-
-con.execute("""
-    CREATE TABLE IF NOT EXISTS insights (
-        activity_id BIGINT PRIMARY KEY,
-        insight TEXT
-    )
-""")
-cached = con.execute("SELECT insight FROM insights WHERE activity_id = ?", (int(run_id),)).fetchone()
-
-if cached:
-    st.markdown("### 🧠 AI Coach's Insight for This Run")
-    st.info(cached[0])
-else:
-    try:
-        with st.spinner("🧠 Generating AI coach's insights..."):
-            prompt = (
-                f"You are a bilingual marathon running coach analyzing this workout: {run_summary}. Prepare for Sydney Marathon Aug 31 2025. "
-                "Do NOT summarize the data. Instead, give 3 short coaching insights or training tips. "
-                "Each should help the runner improve fitness, avoid injury, or prepare for their marathon. "
-                "First, list the 3 bullet points in English. "
-                "Then, repeat the exact same 3 insights in Simplified Chinese. Use 简体中文 only — do not use Vietnamese or any other language."
-                "Use modern, simple vocabulary. Do NOT include any headings or labels — just clean bullet points."
-            )
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": "You are a concise, practical, and supportive marathon coach."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-
-            insight_text = response.choices[0].message.content
-            formatted = insight_text.replace("•", "\n\n•").strip()
-
-            # Save insight to DuckDB
-            con.execute("INSERT INTO insights (activity_id, insight) VALUES (?, ?)", (int(run_id), formatted))
-
-            st.markdown("### 🧠 AI Coach's Insight for This Run")
-            st.info(formatted)
-
-    except Exception as e:
-        st.warning(f"⚠️ Unable to fetch insight from Groq: {e}")
+render_chat(title="💬 Questions about this run?")

@@ -1,73 +1,82 @@
-# 🏃‍♀️ Running Dashboard
+# 🏃 Running Dashboard
 
-A personal running dashboard powered by **Streamlit + DuckDB** with **Strava** & **Oura** integrations, ML-based run classification, weather insights, and future **LLM-based chat support**.
+A personalized, AI-powered running dashboard built with **Streamlit**, **DuckDB**, and **Groq LLM**. Designed to help runners visualize progress, analyze performance, and receive intelligent training insights.
 
----
+## 🔧 Features
 
-## 📦 Features
+- 📥 **Automatic Data Ingestion**
+  - Syncs running data from **Strava API**
+  - Pulls recovery + sleep data from **Oura Ring API**
+  - Fetches weather (temperature + humidity) per run
 
-- 🏃 Strava API: Sync run GPS, heart rate, pace, elevation
-- 💍 Oura API: Ingest readiness, sleep, and activity metrics
-- 🌤️ Weather data: Get temp/humidity for each run from Open-Meteo Archive API
-- 🧠 Run classification: Auto-tag runs (recovery, long, intervals)
-- 📈 Visuals: Interactive charts (pace, HR, streaming segments)
-- 💬 AI assistant (WIP): Chat-based training insights using Groq API
-- 🦆 Local-first: Uses DuckDB to store and query all data
+- 📊 **Metrics & Trends**
+  - Daily/weekly pace, distance, heart rate trends
+  - Run classification: *long run*, *recovery*, *interval*, etc.
+  - AI-based clustering and rules for categorizing runs
 
----
+- 📈 **Pace Prediction Model**
+  - ML-based pace prediction for 5K, 10K, Half, and Full Marathon
+  - Uses weather, elevation, HR, Oura data, etc.
 
-## 🚀 Setup Instructions
+- 💬 **AI Running Coach (LLM Chatbot)**
+  - Uses Groq API (LLaMA3.3-70b) for personalized coaching
+  - Context-aware answers from:
+    - 7d run history
+    - 28d trends
+    - Oura sleep & readiness
+    - Weather & terrain
+  - Avoids generic advice (e.g., "do more strength training")
 
+## 📂 File Structure
+
+```
+.
+├── app.py                  # Main Streamlit app
+├── details.py              # Run details view
+├── chat_backend.py         # LLM prompt construction + context logic
+├── pace_prediction.py      # Custom ML model for race pace prediction
+├── data_ingestion.py       # Ingests Strava, Oura, and weather data
+├── running.duckdb          # Local DuckDB database
+```
+
+## 🚀 How to Run
+
+1. Clone the repo:
 ```bash
 git clone https://github.com/cindy4ever/running-dashboard.git
 cd running-dashboard
+```
 
-python3 -m venv venv
-source venv/bin/activate
+2. Install dependencies:
+```bash
 pip install -r requirements.txt
 ```
 
-Create a `.env` file with:
-
-```dotenv
-STRAVA_CLIENT_ID=xxx
-STRAVA_CLIENT_SECRET=xxx
-STRAVA_REFRESH_TOKEN=xxx
-OURA_API_TOKEN=xxx
-```
-
----
-
-## 🧬 Ingest Data
-
-Sync latest 30 runs and recent Oura data:
-
+3. Set environment variables:
 ```bash
-python data_ingestion.py
+export STRAVA_CLIENT_ID=xxx
+export STRAVA_CLIENT_SECRET=xxx
+export STRAVA_REFRESH_TOKEN=xxx
+export OURA_API_TOKEN=xxx
+export GROQ_API_KEY=xxx
 ```
 
-Backfill from a date range:
-
-```bash
-python data_ingestion.py --full --start_date=2025-01-01 --end_date=2025-09-20
-```
-
-💡 Weather for each run is auto-fetched based on GPS + timestamp.  
-⛅ Missing or `NULL` weather rows are re-queried on next sync.
-
----
-
-## 📊 Run the Dashboard
-
-Launch the Streamlit app:
-
+4. Launch the app:
 ```bash
 streamlit run app.py
 ```
 
-- Use sidebar to explore trends
-- Click into a run to see:
-  - Map 🗺️
-  - Heart rate zones ❤️
-  - Streaming pace 📉
-  - Weather data 🌡️
+## 📡 Deployment
+
+Deployed on **Streamlit Cloud**:  
+🔗 [running-dashboard-countdown-to-sydney.streamlit.app](https://running-dashboard-countdown-to-sydney.streamlit.app/)
+
+
+## 🧠 Powered By
+
+- 🐍 Python, 🦆 DuckDB, 🔶 Streamlit, 🧠 Groq LLM
+- Altair, Pandas, Requests, Scikit-learn
+- APIs: Strava, Oura, Open-Meteo
+
+---
+Built and maintained by **Cindy**

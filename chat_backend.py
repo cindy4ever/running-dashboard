@@ -92,7 +92,7 @@ def get_run_context(user_message=None):
         "### METADATA ###",
         f"- Today’s date: {datetime.now().strftime('%B %d, %Y')}",
         "- Assistant name: CoachAI",
-        "- User name: Cindy Luo",
+        "- User name: Cindy",
         "### END METADATA ###",
      "",
         "🏃‍♂️ Recent Runs (7 days):",

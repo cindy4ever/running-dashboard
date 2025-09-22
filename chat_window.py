@@ -6,20 +6,29 @@ def render_chat(title="💬 Ask Me Anything"):
         st.session_state.messages = []
 
     st.subheader(title)
+
+    # ✅ Display only what's stored — no duplication
     for msg in st.session_state.messages:
-        st.chat_message(msg["role"]).write(msg["content"])
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-    prompt = st.chat_input("Ask a question about your training...")
-    if prompt:
+    # ⌨️ Handle input
+    if prompt := st.chat_input("Ask a question about your training..."):
+        # Append user input first
         st.session_state.messages.append({"role": "user", "content": prompt})
-        st.chat_message("user").write(prompt)
 
-        # ✅ Call the actual LLM backend
-        with st.spinner("Thinking..."):
-            try:
-                response, _ = send_to_llm(prompt, st.session_state.messages)
-            except Exception as e:
-                response = f"❌ Error: {e}"
+        # Display user input
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
+        # Call backend and display assistant reply
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                try:
+                    response, _ = send_to_llm(prompt, st.session_state.messages)
+                except Exception as e:
+                    response = f"❌ Error: {e}"
+            st.markdown(response)
+
+        # Append assistant reply
         st.session_state.messages.append({"role": "assistant", "content": response})
-        st.chat_message("assistant").write(response)

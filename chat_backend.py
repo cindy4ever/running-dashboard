@@ -89,6 +89,12 @@ def get_run_context(user_message=None):
     lines = [
         "You are an AI running coach. Use this personalized training context to answer clearly and practically.",
         "",
+        "### METADATA ###",
+        f"- Today’s date: {datetime.now().strftime('%B %d, %Y')}",
+        "- Assistant name: CoachAI",
+        "- User name: Cindy Luo",
+        "### END METADATA ###",
+     "",
         "🏃‍♂️ Recent Runs (7 days):",
         *summarize_runs(runs),
         "",
@@ -143,7 +149,5 @@ def send_to_llm(user_message, session_history, session_id=None):
     except Exception as e:
         reply = f"❌ LLM error: {e}"
 
-    session_history.append({"role": "user", "content": user_message})
-    session_history.append({"role": "assistant", "content": reply})
 
     return reply, session_id

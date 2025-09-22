@@ -1,4 +1,5 @@
 import streamlit as st
+from chat_backend import send_to_llm
 
 def render_chat(title="💬 Ask Me Anything"):
     if "messages" not in st.session_state:
@@ -13,7 +14,12 @@ def render_chat(title="💬 Ask Me Anything"):
         st.session_state.messages.append({"role": "user", "content": prompt})
         st.chat_message("user").write(prompt)
 
-        # Placeholder until LLM is connected
-        response = "🧠 LLM response coming soon: this will answer with personalized insights!"
+        # ✅ Call the actual LLM backend
+        with st.spinner("Thinking..."):
+            try:
+                response, _ = send_to_llm(prompt, st.session_state.messages)
+            except Exception as e:
+                response = f"❌ Error: {e}"
+
         st.session_state.messages.append({"role": "assistant", "content": response})
         st.chat_message("assistant").write(response)

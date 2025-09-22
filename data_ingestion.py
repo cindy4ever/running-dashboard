@@ -278,6 +278,15 @@ def sync_activities(limit=None, full_sync=False):
     print(f"✅ Sync complete! New: {count_new}, Updated: {count_updated}")
 
 
+import os
+import requests
+import pandas as pd
+from datetime import datetime, timedelta
+import duckdb
+
+# Connect to your local DuckDB
+con = duckdb.connect("running.duckdb")
+
 def ingest_oura_data(start_date=None, end_date=None):
     token = os.getenv("OURA_API_TOKEN")
     if not token:
@@ -285,7 +294,6 @@ def ingest_oura_data(start_date=None, end_date=None):
         return
 
     headers = {"Authorization": f"Bearer {token}"}
-
     today = datetime.utcnow().date()
     if not start_date:
         start_date = (today - timedelta(days=7)).isoformat()
@@ -301,35 +309,47 @@ def ingest_oura_data(start_date=None, end_date=None):
     for name, url in endpoints.items():
         print(f"📡 Fetching Oura {name} data...")
         try:
-            response = requests.get(url, headers=headers, params={
+            resp = requests.get(url, headers=headers, params={
                 "start_date": start_date,
                 "end_date": end_date
             })
-            response.raise_for_status()
-            data = response.json().get("data", [])
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
             if not data:
-                print(f"⚠️ No {name} data returned from Oura.")
+                print(f"⚠️ No {name} data returned.")
                 continue
 
             df = pd.DataFrame(data)
 
-            # Convert ISO date strings to datetime
+            # Add fallback timestamp columns
+            if "timestamp" not in df.columns:
+                if "day" in df.columns:
+                    df["timestamp"] = pd.to_datetime(df["day"])
+                elif "bedtime_start" in df.columns:
+                    df["timestamp"] = pd.to_datetime(df["bedtime_start"])
+
+            # Normalize columns
+            if name == "sleep" and "duration" in df.columns:
+                df["total_sleep_duration"] = df["duration"] / 60  # seconds → minutes
+
+            # Ensure datetime format
             for col in df.columns:
                 if df[col].dtype == object and df[col].astype(str).str.match(r"^\d{4}-\d{2}-\d{2}").any():
                     df[col] = pd.to_datetime(df[col], errors="ignore")
 
-            # Convert long digit columns (like class_5_min) to TEXT
+            # Convert large digit fields to string (DuckDB can't handle 20+ digits as int)
             for col in df.columns:
-                if df[col].dtype == object and df[col].astype(str).str.fullmatch(r"\d{20,}").any():
+                if df[col].astype(str).str.fullmatch(r"\d{20,}").any():
                     df[col] = df[col].astype(str)
 
-            # Reset schema completely each time to avoid column mismatch
+            # Store into DuckDB
             con.execute(f"DROP TABLE IF EXISTS oura_{name}")
             con.execute(f"CREATE TABLE oura_{name} AS SELECT * FROM df")
 
-            print(f"✅ Ingested Oura {name} data: {len(df)} records.")
+            print(f"✅ Ingested Oura {name}: {len(df)} rows")
+
         except Exception as e:
-            print(f"❌ Error fetching {name} data: {e}")
+            print(f"❌ Error fetching {name}: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

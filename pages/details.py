@@ -229,4 +229,4 @@ run_summary = {
     "date": run["start_date_local"].strftime("%Y-%m-%d")
 }
 
-render_chat(title="💬 Questions about this run?")
+# render_chat(title="💬 Questions about this run?")
